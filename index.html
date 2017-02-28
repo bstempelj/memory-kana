@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Memory Kana</title>
+
+    <link rel="stylesheet" href="css/normalize.css">
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Memory Kana</h1>
+        </header>
+        <div class="mk-modal">
+            <div class="mk-content">
+                <h3>Victory!</h3>
+            </div>
+        </div>
+        <main>
+            <ul class="mk-grid"></ul>
+            <p class="mk-timer">00:00</p>
+        </main>
+        <div class="mk-overlay"></div>
+    </div>
+
+    <script src="js/classie.js"></script>
+    <script src="js/memoryKana.js"></script>
+    <script>
+        window.addEventListener("DOMContentLoaded", function() {
+            var mk = new MemoryKana();
+        });
+    </script>
+</body>
+</html>
