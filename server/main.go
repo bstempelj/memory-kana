@@ -58,6 +58,7 @@ func main() {
     mux.Handle("/", newFileServer(".."))
     mux.HandleFunc("GET /api/scoreboard", getScoreboard)
 
+    log.Printf("Listening on port 1234")
     err := http.ListenAndServe(":1234", mux)
     if err != nil {
         log.Fatal(err)
