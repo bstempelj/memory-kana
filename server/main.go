@@ -5,6 +5,7 @@ import (
     "log"
     "os"
     "encoding/json"
+    "sort"
 )
 
 type PlayerScore struct {
@@ -37,6 +38,10 @@ func init() {
         { "Terri Terry", 11 },
         { "Trevor River", 9 },
     }
+
+    sort.Slice(scoreboard, func(i, j int) bool {
+        return scoreboard[i].Score > scoreboard[j].Score
+    })
 }
 
 func newFileServer(clientPath string) http.Handler {
