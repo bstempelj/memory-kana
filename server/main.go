@@ -6,20 +6,21 @@ import (
     "os"
 )
 
-func main() {
-    clientPath := ".."
 
+func newFileServer(clientPath string) http.Handler {
     _, err := os.Stat(clientPath)
     if err != nil {
         log.Fatal(err)
     }
 
-    fs := http.FileServer(http.Dir(clientPath))
+    return http.FileServer(http.Dir(clientPath))
+}
 
+func main() {
     mux := http.NewServeMux()
-    mux.Handle("/", fs)
+    mux.Handle("/", newFileServer(".."))
 
-    err = http.ListenAndServe(":1234", mux)
+    err := http.ListenAndServe(":1234", mux)
     if err != nil {
         log.Fatal(err)
     }
