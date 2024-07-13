@@ -58,15 +58,15 @@ var MemoryKana = (function() {
 
                     // get clicked span
                     var span = this.children[0];
-                    classie.addClass(span, "clicked");
+                    span.classList.add("clicked");
 
                     // clicked 2-times
                     if (clicked) {
                         // pair found
                         if (clicked.innerHTML == span.dataset.pair) {
                             // permanently show
-                            classie.addClass(clicked, "show");
-                            classie.addClass(span, "show");
+                            clicked.classList.add("show");
+                            span.classList.add("show");
 
                             // increase score
                             self.score++;
@@ -74,14 +74,14 @@ var MemoryKana = (function() {
 
                         // game over with victory
                         if (self.score == self.maxScore) {
-                            classie.addClass(self.modal, "mk-show");
+                            self.modal.classList.add("mk-show");
                             clearInterval(self.timerHandle);
                         }
 
                         // hide clicked items after 200ms
                         setTimeout(function() {
-                            classie.removeClass(clicked, "clicked");
-                            classie.removeClass(span, "clicked");
+                            clicked.classList.remove("clicked");
+                            span.classList.remove("clicked");
                             clicked = null;
                         }, 200);
                     } else {
