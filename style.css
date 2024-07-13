@@ -66,6 +66,19 @@ h1 {
 	font-size: 3em;
 }
 
+.mk-wrap {
+	display: flex;
+}
+
+.mk-highscores {
+	font-size: 1.2em;
+	list-style: none;
+}
+
+.mk-highscores li:first-child {
+	color: red;
+}
+
 .mk-grid {
 	display: grid;
 	grid-template-columns: repeat(6, 80px);

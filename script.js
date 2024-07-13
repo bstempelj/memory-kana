@@ -4,9 +4,7 @@ class MemoryKana {
         this.grid = document.querySelector(".mk-grid");
         this.tiles;
 
-        // modal windows and overlay
-        this.modal = document.querySelector(".mk-modal");
-        this.overlay = document.querySelector(".mk-overlay");
+        this.highscores = document.querySelector(".mk-highscores");
 
         // timer
         this.timer = document.querySelector(".mk-timer");
@@ -135,6 +133,21 @@ class MemoryKana {
 
     randomNumber(min, max) {
         return Math.floor(Math.random() * (max - min)) + min;
+    }
+
+    async displayScoreboard() {
+        try {
+            const response = await fetch("api/scoreboard");
+            const payload = await response.json();
+
+            let highscoreList = "";
+            payload.forEach(playerScore => {
+                highscoreList += `<li>${playerScore.player} ${playerScore.score}</li>`
+            });
+            this.highscores.innerHTML = highscoreList;
+        } catch (err) {
+            console.error(err.message);
+        }
     }
 
     hiragana = {
