@@ -29,13 +29,13 @@ class MemoryKana {
     }
 
     startTimer() {
-        var min = 0, sec = 1, self = this;
+        let min = 0, sec = 1, self = this;
         this.timerStarted = true;
 
         this.timerHandle = setInterval(function() {
             // add leading zeros
-            var minString = (min < 10) ? "0"+min : min;
-            var secString = (sec < 10) ? "0"+sec : sec;
+            let minString = (min < 10) ? "0"+min : min;
+            let secString = (sec < 10) ? "0"+sec : sec;
 
             // minute increase
             if (sec++ == 60) {
@@ -49,14 +49,14 @@ class MemoryKana {
     }
 
     initClickEvents() {
-            var clicked, self = this;
+            let clicked, self = this;
             this.tiles.forEach(function(item) {
                 item.addEventListener('click', function() {
                     // init timer on first click
                     if (!self.timerStarted) self.startTimer();
 
                     // get clicked span
-                    var span = this.children[0];
+                    let span = this.children[0];
                     span.classList.add("clicked");
 
                     // clicked 2-times
@@ -92,24 +92,24 @@ class MemoryKana {
         };
 
     createTiles() {
-        var numOfTiles = 24;
-        for (var i = 0; i < numOfTiles; i++) {
-            var li = document.createElement("li");
-            var span = document.createElement("span");
+        let numOfTiles = 24;
+        for (let i = 0; i < numOfTiles; i++) {
+            let li = document.createElement("li");
+            let span = document.createElement("span");
             this.grid.appendChild(li).appendChild(span);
         }
         this.tiles = Array.prototype.slice.call(this.grid.querySelectorAll("li"))
     }
 
     populateTiles(kanaType) {
-        var temp = this.tiles.slice();
+        let temp = this.tiles.slice();
         while (temp.length > 0) {
             // random remove from array
-            var kana = temp.splice(this.randomNumber(0, temp.length), 1)[0].children[0];
-            var romaji = temp.splice(this.randomNumber(0, temp.length), 1)[0].children[0];
+            let kana = temp.splice(this.randomNumber(0, temp.length), 1)[0].children[0];
+            let romaji = temp.splice(this.randomNumber(0, temp.length), 1)[0].children[0];
             // loop if duplicate is found
-            var prop = this.randomProperty(kanaType);
-            while(this.checkDuplicate(prop)) {
+            let prop = this.randomProperty(kanaType);
+            while (this.checkDuplicate(prop)) {
                 prop = this.randomProperty(kanaType);
             }
             // add kana and romaji
@@ -121,15 +121,15 @@ class MemoryKana {
     }
 
     checkDuplicate(test) {
-        for (var i = 0, len = this.tiles.length; i < len; i++) {
-            var span = this.tiles[i].children[0];
+        for (let i = 0, len = this.tiles.length; i < len; i++) {
+            let span = this.tiles[i].children[0];
             if (span.innerHTML == test) return true;
         }
         return false;
     }
 
     randomProperty(obj) {
-        var keys = Object.keys(obj);
+        let keys = Object.keys(obj);
         return keys[keys.length * Math.random() << 0];
     }
 
