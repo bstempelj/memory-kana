@@ -1,6 +1,5 @@
-var MemoryKana = (function() {
-
-    function MemoryKana() {
+class MemoryKana {
+    constructor() {
         // grid and content
         this.grid = document.querySelector(".mk-grid");
         this.tiles;
@@ -19,17 +18,17 @@ var MemoryKana = (function() {
         this.maxScore = 12;
 
         // initialize game
-        this.init(hiragana);
+        this.init(this.hiragana);
     }
 
-    MemoryKana.prototype.init = function(kana) {
+    init(kana) {
         this.createTiles();
         this.populateTiles(kana);
         this.timerStarted = false;
         this.initClickEvents();
     }
 
-    MemoryKana.prototype.startTimer = function() {
+    startTimer() {
         var min = 0, sec = 1, self = this;
         this.timerStarted = true;
 
@@ -49,7 +48,7 @@ var MemoryKana = (function() {
         }, 1000);
     }
 
-    MemoryKana.prototype.initClickEvents = function() {
+    initClickEvents() {
             var clicked, self = this;
             this.tiles.forEach(function(item) {
                 item.addEventListener('click', function() {
@@ -92,7 +91,7 @@ var MemoryKana = (function() {
             });
         };
 
-    MemoryKana.prototype.createTiles = function() {
+    createTiles() {
         var numOfTiles = 24;
         for (var i = 0; i < numOfTiles; i++) {
             var li = document.createElement("li");
@@ -102,16 +101,16 @@ var MemoryKana = (function() {
         this.tiles = Array.prototype.slice.call(this.grid.querySelectorAll("li"))
     }
 
-    MemoryKana.prototype.populateTiles = function(kanaType) {
+    populateTiles(kanaType) {
         var temp = this.tiles.slice();
         while (temp.length > 0) {
             // random remove from array
-            var kana = temp.splice(randomNumber(0, temp.length), 1)[0].children[0];
-            var romaji = temp.splice(randomNumber(0, temp.length), 1)[0].children[0];
+            var kana = temp.splice(this.randomNumber(0, temp.length), 1)[0].children[0];
+            var romaji = temp.splice(this.randomNumber(0, temp.length), 1)[0].children[0];
             // loop if duplicate is found
-            var prop = randomProperty(kanaType);
+            var prop = this.randomProperty(kanaType);
             while(this.checkDuplicate(prop)) {
-                prop = randomProperty(kanaType);
+                prop = this.randomProperty(kanaType);
             }
             // add kana and romaji
             kana.setAttribute("data-pair", kanaType[prop]);
@@ -119,26 +118,26 @@ var MemoryKana = (function() {
             romaji.setAttribute("data-pair", prop);
             romaji.innerHTML = kanaType[prop];
         }
-    };
+    }
 
-    MemoryKana.prototype.checkDuplicate = function(test) {
+    checkDuplicate(test) {
         for (var i = 0, len = this.tiles.length; i < len; i++) {
             var span = this.tiles[i].children[0];
             if (span.innerHTML == test) return true;
         }
         return false;
-    };
+    }
 
-    function randomProperty(obj) {
+    randomProperty(obj) {
         var keys = Object.keys(obj);
         return keys[keys.length * Math.random() << 0];
     }
 
-    function randomNumber(min, max) {
+    randomNumber(min, max) {
         return Math.floor(Math.random() * (max - min)) + min;
     }
 
-    var hiragana = {
+    hiragana = {
         "あ": "a", "い": "i", "う": "u", "え": "e", "お": "o",
         "か": "ka", "き": "ki", "く": "ku", "け": "ke", "こ": "ko",
         "さ": "sa", "し": "shi", "す": "su", "せ": "se", "そ": "so",
@@ -152,7 +151,7 @@ var MemoryKana = (function() {
         "ん": "n"
     };
 
-    var katakana = {
+    katakana = {
         "ア": "a", "イ": "i", "ウ": "u", "エ": "e", "オ": "o",
         "カ": "ka", "キ": "ki", "ク": "ku", "ケ": "ke", "コ": "ko",
         "サ": "sa", "シ": "shi", "ス": "su", "セ": "se", "ソ": "so",
@@ -165,7 +164,4 @@ var MemoryKana = (function() {
         "ワ": "wa", "ヲ": "wo",
         "ン": "n"
     };
-
-    return MemoryKana;
-
-}());
+}
