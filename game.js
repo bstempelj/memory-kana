@@ -77,6 +77,23 @@ class MemoryKana {
                     if (this.score == this.maxScore) {
                         this.modal.classList.add("mk-show");
                         clearInterval(this.timerHandle);
+
+                        // send score to server
+                        (async () => {
+                            const response = await fetch("/api/scoreboard", {
+                                method: "POST",
+                                headers: {
+                                    "Accept": "application/json",
+                                    "Content-Type": "application/json",
+                                },
+                                body: JSON.stringify({player: "player1", score: 10}),
+                            });
+
+                            const status = await response.status;
+                            if (status != 200) {
+                                console.error("POST /api/scoreboard failed with status" + status);
+                            }
+                        })();
                     }
 
                     // hide clicked items after 200ms
