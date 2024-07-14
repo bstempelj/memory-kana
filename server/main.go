@@ -4,25 +4,20 @@ import (
     "net/http"
     "log"
     "os"
-    "encoding/json"
     "sort"
+    "text/template"
 )
 
 type PlayerScore struct {
-    Player string `json:"player"`
-    Score int `json:"score"`
+    Player string
+    Score int
 }
 
 var scoreboard []PlayerScore
 
 func getScoreboard(w http.ResponseWriter, r *http.Request) {
-    w.Header().Set("Content-Type", "application/json")
-    w.WriteHeader(http.StatusOK)
-
-    err := json.NewEncoder(w).Encode(scoreboard)
-    if err != nil {
-        http.Error(w, err.Error(), http.StatusInternalServerError)
-    }
+    tmpl := template.Must(template.ParseFiles("../scoreboard.html"))
+    tmpl.Execute(w, scoreboard)
 }
 
 func init() {
@@ -56,7 +51,7 @@ func newFileServer(clientPath string) http.Handler {
 func main() {
     mux := http.NewServeMux()
     mux.Handle("/", newFileServer(".."))
-    mux.HandleFunc("GET /api/scoreboard", getScoreboard)
+    mux.HandleFunc("/scoreboard", getScoreboard)
 
     log.Printf("Listening on port 1234")
     err := http.ListenAndServe(":1234", mux)

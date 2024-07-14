@@ -18,17 +18,17 @@
                     </tr>
                 </thead>
                 <tbody>
+                    {{ range . }}
+                    <tr>
+                        <td>{{ .Player }}</td>
+                        <td>{{ .Score }}</td>
+                    </tr>
+                    {{ end }}
                 </tbody>
             </table>
         </main>
         <footer>
             Made by Blaz Stempelj
         </footer>
-        <script src="scoreboard.js" defer></script>
-        <script>
-            document.addEventListener("DOMContentLoaded", () => {
-                displayScoreboard();
-            });
-        </script>
     </body>
 </html>
