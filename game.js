@@ -45,47 +45,47 @@ class MemoryKana {
     }
 
     initClickEvents() {
-            let clicked, self = this;
-            this.tiles.forEach(function(item) {
-                item.addEventListener('click', function() {
-                    // init timer on first click
-                    if (!self.timerStarted) self.startTimer();
+        let clicked, self = this;
+        this.tiles.forEach(function(item) {
+            item.addEventListener('click', function() {
+                // init timer on first click
+                if (!self.timerStarted) self.startTimer();
 
-                    // get clicked span
-                    let span = this.children[0];
-                    span.classList.add("clicked");
+                // get clicked span
+                let span = this.children[0];
+                span.classList.add("clicked");
 
-                    // clicked 2-times
-                    if (clicked) {
-                        // pair found
-                        if (clicked.innerHTML == span.dataset.pair) {
-                            // permanently show
-                            clicked.classList.add("show");
-                            span.classList.add("show");
+                // clicked 2-times
+                if (clicked) {
+                    // pair found
+                    if (clicked.innerHTML == span.dataset.pair) {
+                        // permanently show
+                        clicked.classList.add("show");
+                        span.classList.add("show");
 
-                            // increase score
-                            self.score++;
-                        }
-
-                        // game over with victory
-                        if (self.score == self.maxScore) {
-                            self.modal.classList.add("mk-show");
-                            clearInterval(self.timerHandle);
-                        }
-
-                        // hide clicked items after 200ms
-                        setTimeout(function() {
-                            clicked.classList.remove("clicked");
-                            span.classList.remove("clicked");
-                            clicked = null;
-                        }, 200);
-                    } else {
-                        // save clicked item
-                        clicked = span;
+                        // increase score
+                        self.score++;
                     }
-                });
+
+                    // game over with victory
+                    if (self.score == self.maxScore) {
+                        self.modal.classList.add("mk-show");
+                        clearInterval(self.timerHandle);
+                    }
+
+                    // hide clicked items after 200ms
+                    setTimeout(function() {
+                        clicked.classList.remove("clicked");
+                        span.classList.remove("clicked");
+                        clicked = null;
+                    }, 200);
+                } else {
+                    // save clicked item
+                    clicked = span;
+                }
             });
-        };
+        });
+    };
 
     createTiles() {
         let numOfTiles = 24;
