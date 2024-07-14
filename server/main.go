@@ -4,14 +4,12 @@ import (
     "net/http"
     "log"
     "os"
-    "sort"
     "text/template"
-    "encoding/json"
 )
 
 type PlayerScore struct {
     Player string `json:"player"`
-    Score int `json:"score"`
+    Score string `json:"score"`
 }
 
 var scoreboard []PlayerScore
@@ -22,36 +20,16 @@ func getScoreboard(w http.ResponseWriter, r *http.Request) {
 }
 
 func postScoreboard(w http.ResponseWriter, r *http.Request) {
-    decoder := json.NewDecoder(r.Body)
+    r.ParseForm()
 
-    var playerScore PlayerScore
-    err := decoder.Decode(&playerScore)
-    if err != nil {
-        http.Error(w, err.Error(), http.StatusInternalServerError)
-    }
-
-    scoreboard = append(scoreboard, playerScore)
-
-    w.WriteHeader(http.StatusOK) 
-}
-
-func init() {
-    scoreboard = []PlayerScore{
-        { "Norman Allison", 5 },
-        { "Alyssa Cohen", 99 },
-        { "Ann Elliott", 84 },
-        { "Conrad Powell", 88 },
-        { "Spencer Paul", 69 },
-        { "Cedric Roy", 64 },
-        { "Angel Sharp", 68 },
-        { "Louis Evans", 45 },
-        { "Terri Terry", 11 },
-        { "Trevor River", 9 },
-    }
-
-    sort.Slice(scoreboard, func(i, j int) bool {
-        return scoreboard[i].Score > scoreboard[j].Score
+    scoreboard = append(scoreboard, PlayerScore{
+        Player: r.FormValue("player"),
+        Score: r.FormValue("score"),
     })
+
+    log.Println(scoreboard)
+
+    http.Redirect(w, r, "/scoreboard", http.StatusSeeOther)
 }
 
 func newFileServer(clientPath string) http.Handler {
@@ -66,8 +44,8 @@ func newFileServer(clientPath string) http.Handler {
 func main() {
     mux := http.NewServeMux()
     mux.Handle("/", newFileServer(".."))
-    mux.HandleFunc("/scoreboard", getScoreboard)
-    mux.HandleFunc("POST /api/scoreboard", postScoreboard)
+    mux.HandleFunc("GET /scoreboard", getScoreboard)
+    mux.HandleFunc("POST /scoreboard", postScoreboard)
 
     log.Printf("Listening on port 1234")
     err := http.ListenAndServe(":1234", mux)

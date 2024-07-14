@@ -4,9 +4,9 @@ class MemoryKana {
         this.grid = document.querySelector(".mk-grid");
         this.tiles;
 
-        // modal windows and overlay
-        this.modal = document.querySelector(".mk-modal");
-        this.overlay = document.querySelector(".mk-overlay");
+        // dialog
+        this.dialog = document.querySelector('#mk-dialog');
+        this.playerScore = document.querySelector('#player-score');
 
         // timer
         this.timer = document.querySelector(".mk-timer");
@@ -75,25 +75,12 @@ class MemoryKana {
 
                     // game over with victory
                     if (this.score == this.maxScore) {
-                        this.modal.classList.add("mk-show");
                         clearInterval(this.timerHandle);
 
-                        // send score to server
-                        (async () => {
-                            const response = await fetch("/api/scoreboard", {
-                                method: "POST",
-                                headers: {
-                                    "Accept": "application/json",
-                                    "Content-Type": "application/json",
-                                },
-                                body: JSON.stringify({player: "player1", score: 10}),
-                            });
+                        this.dialog.showModal();
 
-                            const status = await response.status;
-                            if (status != 200) {
-                                console.error("POST /api/scoreboard failed with status" + status);
-                            }
-                        })();
+                        const elapsedTime = this.timer.innerHTML;
+                        this.playerScore.value = elapsedTime;
                     }
 
                     // hide clicked items after 200ms
