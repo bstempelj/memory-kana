@@ -4,8 +4,6 @@ class MemoryKana {
         this.grid = document.querySelector(".mk-grid");
         this.tiles;
 
-        this.highscores = document.querySelector(".mk-highscores");
-
         // timer
         this.timer = document.querySelector(".mk-timer");
         this.timerStarted;
