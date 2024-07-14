@@ -1,32 +1,22 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Memory Kana</title>
-
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <header>
-        <h1>Memory Kana</h1>
-    </header>
-    <main>
-        <div class="mk-wrap">
-            <ul class="mk-grid"></ul>
-            <ul class="mk-highscores"></ul>
-        </div>
-        <p class="mk-timer">00:00</p>
-    </main>
-    <footer>
-        Made by Blaz Stempelj
-    </footer>
-
-    <script src="script.js"></script>
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const mk = new MemoryKana();
-            mk.displayScoreboard();
-        });
-    </script>
-</body>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Memory Kana</title>
+        <link rel="stylesheet" href="style.css">
+    </head>
+    <body>
+        <header>
+            <h1>Memory Kana</h1>
+        </header>
+        <main>
+            <menu>
+                <li><a href="game.html">Play</a></li>
+                <li><a href="scoreboard.html">Scoreboard</a></li>
+            </menu>
+        </main>
+        <footer>
+            Made by Blaz Stempelj
+        </footer>
+    </body>
 </html>

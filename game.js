@@ -135,21 +135,6 @@ class MemoryKana {
         return Math.floor(Math.random() * (max - min)) + min;
     }
 
-    async displayScoreboard() {
-        try {
-            const response = await fetch("api/scoreboard");
-            const payload = await response.json();
-
-            let highscoreList = "";
-            payload.forEach(playerScore => {
-                highscoreList += `<li>${playerScore.player} ${playerScore.score}</li>`
-            });
-            this.highscores.innerHTML = highscoreList;
-        } catch (err) {
-            console.error(err.message);
-        }
-    }
-
     hiragana = {
         "あ": "a", "い": "i", "う": "u", "え": "e", "お": "o",
         "か": "ka", "き": "ki", "く": "ku", "け": "ke", "こ": "ko",

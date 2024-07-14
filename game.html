@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Memory Kana</title>
+        <link rel="stylesheet" href="style.css">
+    </head>
+    <body>
+        <header>
+            <h1>Memory Kana</h1>
+        </header>
+        <main>
+            <div class="mk-wrap">
+                <ul class="mk-grid"></ul>
+                <ul class="mk-highscores"></ul>
+            </div>
+            <p class="mk-timer">00:00</p>
+        </main>
+        <footer>
+            Made by Blaz Stempelj
+        </footer>
+        <script src="game.js" defer></script>
+        <script>
+            document.addEventListener("DOMContentLoaded", () => {
+                const mk = new MemoryKana();
+            });
+        </script>
+    </body>
+</html>
