@@ -47,6 +47,31 @@ main {
 	flex: 1;
 }
 
+menu {
+	padding: 0;
+	list-style: none;
+
+	li {
+		background-color: white;
+		border-radius: 10px;
+		border: 3px solid #9c5528;
+		display: block;
+			margin-bottom: 50px;
+
+		a {
+		cursor: pointer;
+		text-align: center;
+		user-select: none;
+			min-width: 500px;
+			display: block;
+			padding: 10px;
+			text-decoration: none;
+			color: black;
+			font-size: 2em;
+		}
+	}
+}
+
 footer {
 	background-color: #4F565F;
 	width: 100vw;
