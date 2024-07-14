@@ -4,6 +4,10 @@ class MemoryKana {
         this.grid = document.querySelector(".mk-grid");
         this.tiles;
 
+        // modal windows and overlay
+        this.modal = document.querySelector(".mk-modal");
+        this.overlay = document.querySelector(".mk-overlay");
+
         // timer
         this.timer = document.querySelector(".mk-timer");
         this.timerStarted;
@@ -25,10 +29,10 @@ class MemoryKana {
     }
 
     startTimer() {
-        let min = 0, sec = 1, self = this;
+        let min = 0, sec = 1;
         this.timerStarted = true;
 
-        this.timerHandle = setInterval(function() {
+        this.timerHandle = setInterval(() => {
             // add leading zeros
             let minString = (min < 10) ? "0"+min : min;
             let secString = (sec < 10) ? "0"+sec : sec;
@@ -40,19 +44,21 @@ class MemoryKana {
             }
 
             // display timer
-            self.timer.innerHTML = minString + ":" + secString;
+            this.timer.innerHTML = minString + ":" + secString;
         }, 1000);
     }
 
     initClickEvents() {
-        let clicked, self = this;
-        this.tiles.forEach(function(item) {
-            item.addEventListener('click', function() {
+        let clicked = null;
+        this.tiles.forEach((item) => {
+            item.addEventListener('click', () => {
                 // init timer on first click
-                if (!self.timerStarted) self.startTimer();
+                if (!this.timerStarted) {
+                    this.startTimer();
+                }
 
                 // get clicked span
-                let span = this.children[0];
+                let span = item.children[0];
                 span.classList.add("clicked");
 
                 // clicked 2-times
@@ -64,17 +70,17 @@ class MemoryKana {
                         span.classList.add("show");
 
                         // increase score
-                        self.score++;
+                        this.score++;
                     }
 
                     // game over with victory
-                    if (self.score == self.maxScore) {
-                        self.modal.classList.add("mk-show");
-                        clearInterval(self.timerHandle);
+                    if (this.score == this.maxScore) {
+                        this.modal.classList.add("mk-show");
+                        clearInterval(this.timerHandle);
                     }
 
                     // hide clicked items after 200ms
-                    setTimeout(function() {
+                    setTimeout(() => {
                         clicked.classList.remove("clicked");
                         span.classList.remove("clicked");
                         clicked = null;
