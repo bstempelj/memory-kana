@@ -77,10 +77,23 @@ class MemoryKana {
                     if (this.score == this.maxScore) {
                         clearInterval(this.timerHandle);
 
-                        this.dialog.showModal();
-
                         const elapsedTime = this.timer.innerHTML;
-                        this.playerScore.value = elapsedTime;
+
+                        // create form dinamically and submit
+                        // reason: make redirect from Go work automatically
+                        {
+                            const form = document.createElement("form");
+                            form.style.display = "none";
+                            form.method = "POST";
+                            form.action = "/scoreboard";
+
+                            const input = document.createElement("input");
+                            input.name = "player-time";
+                            input.value = elapsedTime;
+                            form.appendChild(input);
+                            document.body.appendChild(form);
+                            form.submit();
+                        }
                     }
 
                     // hide clicked items after 200ms
