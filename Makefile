@@ -5,7 +5,7 @@ docker/run:
 	@docker run -p 1234:1234 --rm --name memory-kana memory-kana
 
 compose/up:
-	@docker compose up -d
+	@docker compose up --build -d
 
 compose/down:
 	@docker compose down

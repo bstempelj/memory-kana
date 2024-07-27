@@ -7,6 +7,9 @@ import (
     "fmt"
     "embed"
     "text/template"
+    "database/sql"
+    _ "github.com/lib/pq"
+    "time"
 )
 
 //go:embed assets
@@ -62,12 +65,51 @@ func postScoreboard(w http.ResponseWriter, r *http.Request) {
     http.Redirect(w, r, "/scoreboard", http.StatusSeeOther)
 }
 
+func connect() (*sql.DB, error) {
+    var (
+        host = "postgres"
+        //port = os.Getenv("POSTGRES_PORT")
+        port = 5432
+        user = os.Getenv("POSTGRES_USER")
+        password = os.Getenv("POSTGRES_PASSWORD")
+        dbname = os.Getenv("POSTGRES_DB")
+    )
+
+    psqlInfo := fmt.Sprintf(
+        "host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+        host, port, user, password, dbname)
+
+    db, err := sql.Open("postgres", psqlInfo)
+    if err != nil {
+        return nil, err
+    }
+
+    err = db.Ping()
+    if err != nil {
+        return nil, err
+    }
+    return db, nil
+}
+
+func insertPlayerTime(db *sql.DB) error {
+    _, err := db.Exec("insert into player_time(player, time) values ($1, $2)", "player1", time.Now())
+    if err != nil {
+        return err
+    }
+    return nil
+}
+
 func main() {
-    fmt.Println(os.Getenv("POSTGRES_DB"))
-    fmt.Println(os.Getenv("POSTGRES_PORT"))
-    fmt.Println(os.Getenv("POSTGRES_USER"))
-    fmt.Println(os.Getenv("POSTGRES_PASSWORD"))
-    fmt.Println(os.Getenv("SERVER_PORT"))
+    db, err := connect()
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer db.Close()
+
+    err = insertPlayerTime(db)
+    if err != nil {
+        log.Fatal(err)
+    }
 
     mux := http.NewServeMux()
     mux.HandleFunc("GET /", getMenu)
