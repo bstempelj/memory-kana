@@ -3,41 +3,47 @@ package main
 import (
     "net/http"
     "log"
-    "os"
     "fmt"
+    "embed"
     "text/template"
 )
 
-const assetsPath = "assets/"
-const templatesPath = "templates/"
+//go:embed assets
+var assetsFS embed.FS
+
+//go:embed templates
+var templatesFS embed.FS
+
+var scoreboard []PlayerScore
 
 type PlayerScore struct {
     Player string `json:"player"`
     Score string `json:"score"`
 }
 
-var scoreboard []PlayerScore
-
 func getMenu(w http.ResponseWriter, r *http.Request) {
-    t := template.Must(template.ParseFiles(
-        templatesPath + "base.html",
-        templatesPath + "menu.html",
+    t := template.Must(template.ParseFS(
+        templatesFS,
+        "templates/base.html",
+        "templates/menu.html",
     ))
     t.Execute(w, nil)
 }
 
 func getGame(w http.ResponseWriter, r *http.Request) {
-    t := template.Must(template.ParseFiles(
-        templatesPath + "base.html",
-        templatesPath + "game.html",
+    t := template.Must(template.ParseFS(
+        templatesFS,
+        "templates/base.html",
+        "templates/game.html",
     ))
     t.Execute(w, nil)
 }
 
 func getScoreboard(w http.ResponseWriter, r *http.Request) {
-    t := template.Must(template.ParseFiles(
-        templatesPath + "base.html",
-        templatesPath + "scoreboard.html",
+    t := template.Must(template.ParseFS(
+        templatesFS,
+        "templates/base.html",
+        "templates/scoreboard.html",
     ))
     t.Execute(w, scoreboard)
 }
@@ -56,18 +62,12 @@ func postScoreboard(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-    // test that assets are available
-    _, err := os.Stat(assetsPath)
-    if err != nil {
-        log.Fatal(err)
-    }
-
     mux := http.NewServeMux()
     mux.HandleFunc("GET /", getMenu)
     mux.HandleFunc("GET /game", getGame)
     mux.HandleFunc("GET /scoreboard", getScoreboard)
     mux.HandleFunc("POST /scoreboard", postScoreboard)
-    mux.Handle("GET /assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir(assetsPath))))
+    mux.Handle("GET /assets/", http.FileServer(http.FS(assetsFS)))
 
     port := 1234
 
