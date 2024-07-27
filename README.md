@@ -2,16 +2,10 @@
 
 ## How to run?
 
-With Go installed
+First you need Docker with docker compose and `make`, then run
 
 ```sh
-go build && ./memory-kana
-```
-
-With Docker installed
-
-```sh
-make docker/run
+make compose/up
 ```
 
 Then open your browser and go to `localhost:1234`
