@@ -2,11 +2,10 @@ FROM golang:1.22 AS build-stage
 
 WORKDIR /app
 
-COPY server/go.mod ./
+COPY go.mod ./
 #COPY go.mod go.sum ./
 RUN go mod download && go mod verify
 
-COPY server/ .
 COPY . .
 
 RUN CGO_ENABLED=0 GOOS=linux go build -o memory-kana

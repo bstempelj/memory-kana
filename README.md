@@ -1,10 +1,20 @@
 # Memory Kana
 
-How to run?
-```bash
-$ python -m http.server
+## How to run?
+
+With Go installed
+
+```sh
+go build && ./memory-kana
 ```
-Then open your browser and go to `localhost:8000`
+
+With Docker installed
+
+```sh
+make docker/run
+```
+
+Then open your browser and go to `localhost:1234`
 
 ## How it looks
 ![](howitlooks.png)
