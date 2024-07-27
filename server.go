@@ -8,7 +8,8 @@ import (
     "text/template"
 )
 
-const templatesPath = "../templates/"
+const assetsPath = "assets/"
+const templatesPath = "templates/"
 
 type PlayerScore struct {
     Player string `json:"player"`
@@ -56,7 +57,6 @@ func postScoreboard(w http.ResponseWriter, r *http.Request) {
 
 func main() {
     // test that assets are available
-    assetsPath := "../assets"
     _, err := os.Stat(assetsPath)
     if err != nil {
         log.Fatal(err)

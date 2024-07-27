@@ -1,9 +1,3 @@
-build:
-	@cd server && go build
-
-run: build
-	@cd server && ./memory-kana
-
 docker/build:
 	@docker build -t memory-kana .
 
