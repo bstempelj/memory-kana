@@ -1,0 +1,25 @@
+{{ define "content" }}
+<main>
+    <ul class="mk-grid"></ul>
+    <p class="mk-timer">00:00</p>
+
+    <dialog id="mk-dialog">
+        <h3>Victory!</h3>
+        <form method="POST" action="/scoreboard">
+            <label for="player">Enter your name:</label><br>
+            <input type="text" id="player-name" name="player" required /><br>
+            <input type="hidden" id="player-score" name="score" required /><br>
+            <input type="submit" value="Confirm" />
+        </form>
+    </dialog>
+</main>
+{{ end }}
+
+{{ define "scripts" }}
+<script src="assets/game.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const mk = new MemoryKana();
+    });
+</script>
+{{ end }}

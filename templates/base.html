@@ -3,20 +3,18 @@
     <head>
         <meta charset="UTF-8">
         <title>Memory Kana</title>
-        <link rel="stylesheet" href="style.css">
+        <link rel="stylesheet" href="/assets/style.css">
     </head>
     <body>
         <header>
             <h1>Memory Kana</h1>
         </header>
         <main>
-            <menu>
-                <li><a href="game.html">Play</a></li>
-                <li><a href="/scoreboard">Scoreboard</a></li>
-            </menu>
+            {{ template "content" . }}
         </main>
         <footer>
             Made by Blaz Stempelj
         </footer>
+        {{ template "scripts" . }}
     </body>
 </html>
