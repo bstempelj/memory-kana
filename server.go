@@ -3,6 +3,7 @@ package main
 import (
     "net/http"
     "log"
+    "os"
     "fmt"
     "embed"
     "text/template"
@@ -62,6 +63,12 @@ func postScoreboard(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+    fmt.Println(os.Getenv("POSTGRES_DB"))
+    fmt.Println(os.Getenv("POSTGRES_PORT"))
+    fmt.Println(os.Getenv("POSTGRES_USER"))
+    fmt.Println(os.Getenv("POSTGRES_PASSWORD"))
+    fmt.Println(os.Getenv("SERVER_PORT"))
+
     mux := http.NewServeMux()
     mux.HandleFunc("GET /", getMenu)
     mux.HandleFunc("GET /game", getGame)
