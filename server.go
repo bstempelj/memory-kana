@@ -149,6 +149,10 @@ func dbSelectPlayerTimes(db *sql.DB) ([]PlayerTime, error) {
 		playerTimes = append(playerTimes, playerTime)
 	}
 
+	if err = res.Err(); err != nil {
+		return nil, err
+	}
+
 	return playerTimes, nil
 }
 
