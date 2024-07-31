@@ -29,22 +29,27 @@ class MemoryKana {
     }
 
     startTimer() {
-        let min = 0, sec = 1;
+        let seconds = 1;
+        let minutes = 0;
+
         this.timerStarted = true;
 
-        this.timerHandle = setInterval(() => {
-            // add leading zeros
-            let minString = (min < 10) ? "0"+min : min;
-            let secString = (sec < 10) ? "0"+sec : sec;
+        let format = (time) => {
+            return (time < 10) ? "0" + time : time;
+        };
 
-            // minute increase
-            if (sec++ == 60) {
-                min++;
-                sec = 0;
+        // display timer
+        this.timerHandle = setInterval(() => {
+            seconds++;
+
+            if (seconds >= 60) {
+                seconds = 0;
+                minutes++;
             }
 
-            // display timer
-            this.timer.innerHTML = minString + ":" + secString;
+            console.log(minutes, seconds);
+
+            this.timer.innerHTML = format(minutes) + ":" + format(seconds);
         }, 1000);
     }
 
