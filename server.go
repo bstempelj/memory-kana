@@ -26,13 +26,29 @@ var assetsFS embed.FS
 //go:embed templates
 var templatesFS embed.FS
 
+type PlayerTime struct {
+	Player string `json:"player"`
+	Time   string `json:"time"`
+}
+
+type Page struct {
+	Home bool
+	Scripts bool
+	Scoreboard []PlayerTime
+}
+
 func getMenu(w http.ResponseWriter, r *http.Request) {
 	t := template.Must(template.ParseFS(
 		templatesFS,
 		"templates/base.html",
 		"templates/menu.html",
 	))
-	t.Execute(w, nil)
+
+	page := Page{Home: true}
+
+	if err := t.Execute(w, page); err != nil {
+		log.Fatal(err)
+	}
 }
 
 func getGame(w http.ResponseWriter, r *http.Request) {
@@ -41,7 +57,12 @@ func getGame(w http.ResponseWriter, r *http.Request) {
 		"templates/base.html",
 		"templates/game.html",
 	))
-	t.Execute(w, nil)
+
+	page := Page{Scripts: true}
+
+	if err := t.Execute(w, page); err != nil {
+		log.Fatal(err)
+	}
 }
 
 func getScoreboard(w http.ResponseWriter, r *http.Request) {
@@ -57,9 +78,11 @@ func getScoreboard(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 
-	fmt.Println("scoreboard=%v", scoreboard)
+	page := Page{Scoreboard: scoreboard}
 
-	t.Execute(w, scoreboard)
+	if err := t.Execute(w, page); err != nil {
+		log.Fatal(err)
+	}
 }
 
 func postScoreboard(w http.ResponseWriter, r *http.Request) {
@@ -122,11 +145,6 @@ func dbInsertPlayerTime(db *sql.DB, playerTime string) error {
 	return nil
 }
 
-type PlayerTime struct {
-	Player string `json:"player"`
-	Time   string `json:"time"`
-}
-
 func dbSelectPlayerTimes(db *sql.DB) ([]PlayerTime, error) {
 	var playerTimes []PlayerTime
 
@@ -144,15 +162,12 @@ func dbSelectPlayerTimes(db *sql.DB) ([]PlayerTime, error) {
 			return nil, err
 		}
 
-		fmt.Println(playerTime)
-
 		playerTimes = append(playerTimes, playerTime)
 	}
 
 	if err = res.Err(); err != nil {
 		return nil, err
 	}
-
 	return playerTimes, nil
 }
 

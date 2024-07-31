@@ -42,9 +42,27 @@ body {
     height: 100vh;
 }
 
+nav ul {
+    padding: 0;
+    list-style: none;
+    display: flex;
+    margin-left: 10px;
+    font-size: 1.5em;
+
+    li {
+        padding-left: 20px;
+        a {
+            text-decoration: none;
+            color: white;
+        }
+    }
+}
+
 main {
-    padding-top: 80px;
     flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 menu {
@@ -72,6 +90,21 @@ menu {
     }
 }
 
+header {
+    &:not(.menu) {
+        background-color: #4F565F;
+        display: flex;
+    }
+
+    width: 100vw;
+    padding: 10px 0;
+
+    a {
+        text-decoration: none;
+        color: white;
+    }
+}
+
 footer {
     background-color: #4F565F;
     width: 100vw;
@@ -80,15 +113,20 @@ footer {
 }
 
 h1 {
-    font-size: 3.5em;
     text-align: center;
-    padding: 10px 0;
+    font-size: 4em;
+}
+
+h2 {
+    text-align: left;
+    padding-left: 10px;
+    font-size: 1.5em;
 }
 
 .mk-timer {
     margin-top: 80px;
     text-align: center;
-    font-size: 3em;
+    font-size: 3.5em;
     user-select: none;
 }
 
@@ -127,5 +165,18 @@ h1 {
         &.clicked, &.show {
             visibility: visible;
         }
+    }
+}
+
+.mk-scoreboard {
+    border-collapse: collapse;
+    font-size: 1.2em;
+
+    th, td {
+        padding: 10px 20px;
+    }
+
+    th {
+        border-bottom: 1px solid white;
     }
 }

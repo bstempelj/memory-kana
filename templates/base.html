@@ -6,8 +6,18 @@
         <link rel="stylesheet" href="/assets/style.css">
     </head>
     <body>
-        <header>
-            <h1>Memory Kana</h1>
+        <header {{ if .Home }} class="menu" {{ end }}>
+            {{ if .Home }}
+            <h1><a href="/">Memory Kana</a></h1>
+            {{ else }}
+            <h2><a href="/">Memory Kana</a></h2>
+            <nav>
+                <ul>
+                    <li><a href="/game">Play</a></li>
+                    <li><a href="/scoreboard">Scoreboard</a></li>
+                </ul>
+            </nav>
+            {{ end }}
         </header>
         <main>
             {{ template "content" . }}
@@ -15,6 +25,8 @@
         <footer>
             Made by Blaž Štempelj
         </footer>
+        {{ if .Scripts }}
         {{ template "scripts" . }}
+        {{ end }}
     </body>
 </html>
