@@ -29,7 +29,7 @@ class MemoryKana {
     }
 
     startTimer() {
-        let seconds = 1;
+        let seconds = 0;
         let minutes = 0;
 
         this.timerStarted = true;
@@ -46,8 +46,6 @@ class MemoryKana {
                 seconds = 0;
                 minutes++;
             }
-
-            console.log(minutes, seconds);
 
             this.timer.innerHTML = format(minutes) + ":" + format(seconds);
         }, 1000);
