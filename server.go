@@ -3,11 +3,13 @@ package main
 import (
 	"database/sql"
 	"embed"
+	"errors"
 	"fmt"
 	"log"
 	"math/rand"
 	"net/http"
 	"os"
+	"strings"
 	"text/template"
 	"time"
 
@@ -32,8 +34,8 @@ type PlayerTime struct {
 }
 
 type Page struct {
-	Home bool
-	Scripts bool
+	Home       bool
+	Scripts    bool
 	Scoreboard []PlayerTime
 }
 
@@ -102,16 +104,40 @@ func postScoreboard(w http.ResponseWriter, r *http.Request) {
 }
 
 func connect() (*sql.DB, error) {
-	var (
-		host     = os.Getenv("POSTGRES_HOST")
-		port     = os.Getenv("POSTGRES_PORT")
-		user     = os.Getenv("POSTGRES_USER")
-		password = os.Getenv("POSTGRES_PASSWORD")
-		dbname   = os.Getenv("POSTGRES_DB")
-	)
+	// NOTE: env vars have carriage return at the end (\r) so we
+	// have to trim them to make concatenation and sprintf work
+	host, ok := os.LookupEnv("POSTGRES_HOST")
+	if !ok {
+		return nil, errors.New("missing POSTGRES_HOST env var")
+	}
+	host = strings.TrimSpace(host)
+
+	port, ok := os.LookupEnv("POSTGRES_PORT")
+	if !ok {
+		return nil, errors.New("missing POSTGRES_PORT env var")
+	}
+	port = strings.TrimSpace(port)
+
+	user, ok := os.LookupEnv("POSTGRES_USER")
+	if !ok {
+		return nil, errors.New("missing POSTGRES_USER env var")
+	}
+	user = strings.TrimSpace(user)
+
+	password, ok := os.LookupEnv("POSTGRES_PASSWORD")
+	if !ok {
+		return nil, errors.New("missing POSTGRES_PASSWORD env var")
+	}
+	password = strings.TrimSpace(password)
+
+	dbname, ok := os.LookupEnv("POSTGRES_DB")
+	if !ok {
+		return nil, errors.New("missing POSTGRES_DB env var")
+	}
+	dbname = strings.TrimSpace(dbname)
 
 	psqlInfo := fmt.Sprintf(
-		"host=%v port=%v user=%v password=%v dbname=%v sslmode=disable",
+		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		host, port, user, password, dbname)
 
 	db, err := sql.Open("postgres", psqlInfo)
