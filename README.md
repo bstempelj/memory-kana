@@ -2,13 +2,53 @@
 
 ## How to run?
 
-First you need Docker with docker compose and `make`, then run
+Install
+
+- `docker`
+- `docker compose`
+- `direnv`
+- `make`
+- `go`
+
+Create an `.envrc` file by copying `.envrc.example`
 
 ```sh
-make compose/up
+cp .envrc.example .env
 ```
 
-Then open your browser and go to `localhost:1234`
+and allow it's execution
+
+```sh
+direnv allow
+```
+
+### Development build
+
+Install `postgres` build downloading its docker image with
+
+```sh
+make dev
+```
+
+build the app and run it
+
+```sh
+go build && ./memory-kana
+# or
+go run .
+```
+
+then open your browser and go to `localhost:1234`.
+
+### Production build
+
+Just run
+
+```sh
+make prod
+```
+
+then open your browser and go to `localhost:1234`.
 
 ## How it looks
 ![](howitlooks.png)
