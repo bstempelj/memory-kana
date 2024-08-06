@@ -103,15 +103,15 @@ func postScoreboard(w http.ResponseWriter, r *http.Request) {
 
 func connect() (*sql.DB, error) {
 	var (
-		host     = "postgres"
-		port     = 5432
+		host     = os.Getenv("POSTGRES_HOST")
+		port     = os.Getenv("POSTGRES_PORT")
 		user     = os.Getenv("POSTGRES_USER")
 		password = os.Getenv("POSTGRES_PASSWORD")
 		dbname   = os.Getenv("POSTGRES_DB")
 	)
 
 	psqlInfo := fmt.Sprintf(
-		"host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+		"host=%v port=%v user=%v password=%v dbname=%v sslmode=disable",
 		host, port, user, password, dbname)
 
 	db, err := sql.Open("postgres", psqlInfo)

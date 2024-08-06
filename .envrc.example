@@ -1,5 +1,3 @@
-export POSTGRES_HOST=postgres
-export POSTGRES_PORT=5432
 export POSTGRES_USER=user
 export POSTGRES_PASSWORD=password
 export POSTGRES_DB=memory-kana
