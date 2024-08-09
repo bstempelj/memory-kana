@@ -13,3 +13,9 @@ docker/tag/%: ## Tag the built docker image
 
 docker/push/%: ## Push the tagged docker image to docker hub
 	@docker image push blazstempelj/memory-kana:$*
+
+compose/dev/up:
+	@docker compose --profile dev up -d
+
+compose/dev/down:
+	@docker compose --profile dev down
