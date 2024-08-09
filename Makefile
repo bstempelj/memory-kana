@@ -12,4 +12,4 @@ docker/tag/%: ## Tag the built docker image
 	@docker tag memory-kana blazstempelj/memory-kana:$*
 
 docker/push/%: ## Push the tagged docker image to docker hub
-	docker image push blazstempelj/memory-kana:$*
+	@docker image push blazstempelj/memory-kana:$*
