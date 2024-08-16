@@ -30,7 +30,7 @@ var templatesFS embed.FS
 
 type PlayerTime struct {
 	Player string `json:"player"`
-	Time   string `json:"time"`
+	Time   time.Time `json:"time"`
 }
 
 type Page struct {
@@ -45,7 +45,7 @@ func getMenu(w http.ResponseWriter, r *http.Request) {
 		"templates/base.html",
 		"templates/menu.html",
 	))
-
+	
 	page := Page{Home: true}
 
 	if err := t.Execute(w, page); err != nil {
@@ -68,11 +68,21 @@ func getGame(w http.ResponseWriter, r *http.Request) {
 }
 
 func getScoreboard(w http.ResponseWriter, r *http.Request) {
-	t := template.Must(template.ParseFS(
+	funcMap := template.FuncMap{
+		"parseTime": func(t time.Time) string {
+			return fmt.Sprintf("%02d:%02d", t.Minute(), t.Second())
+		},
+	}
+
+	t, err := template.New("base.html").Funcs(funcMap).ParseFS(
 		templatesFS,
 		"templates/base.html",
 		"templates/scoreboard.html",
-	))
+	)
+
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	scoreboard, err := dbSelectPlayerTimes(db)
 	if err != nil {
@@ -90,11 +100,13 @@ func getScoreboard(w http.ResponseWriter, r *http.Request) {
 func postScoreboard(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
-	playerTime := r.FormValue("player-time")
+	playerTime, err := time.Parse("04:05", r.FormValue("player-time"))
+	if err != nil {
+		// TODO: redirect to error page
+		log.Fatal(err)
+	}
 
-	fmt.Println("playerTime=" + playerTime)
-
-	err := dbInsertPlayerTime(db, playerTime)
+	err = dbInsertPlayerTime(db, playerTime)
 	if err != nil {
 		// TODO: redirect to error page
 		log.Fatal(err)
@@ -152,7 +164,7 @@ func connect() (*sql.DB, error) {
 	return db, nil
 }
 
-func dbInsertPlayerTime(db *sql.DB, playerTime string) error {
+func dbInsertPlayerTime(db *sql.DB, playerTime time.Time) error {
 	randHash := func(length int) string {
 		b := make([]byte, length)
 		for i := range b {
@@ -174,7 +186,7 @@ func dbInsertPlayerTime(db *sql.DB, playerTime string) error {
 func dbSelectPlayerTimes(db *sql.DB) ([]PlayerTime, error) {
 	var playerTimes []PlayerTime
 
-	res, err := db.Query("select player, \"time\" from player_times")
+	res, err := db.Query(`select player, "time" from player_times order by "time"`)
 	if err != nil {
 		return nil, err
 	}

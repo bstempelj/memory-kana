@@ -1,18 +1,18 @@
 {{ define "content" }}
 <table class="mk-scoreboard">
-    <thead>
-        <tr>
-            <th>Player</th>
-            <th>Time</th>
-        </tr>
-    </thead>
-    <tbody>
-        {{ range .Scoreboard }}
-        <tr>
-            <td>{{ .Player }}</td>
-            <td>{{ .Time }}</td>
-        </tr>
-        {{ end }}
-    </tbody>
+	<thead>
+		<tr>
+			<th>Player</th>
+			<th>Time</th>
+		</tr>
+	</thead>
+	<tbody>
+		{{ range .Scoreboard }}
+		<tr>
+			<td>{{ .Player }}</td>
+			<td>{{ parseTime .Time }}</td>
+		</tr>
+		{{ end }}
+	</tbody>
 </table>
 {{ end }}
