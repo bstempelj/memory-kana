@@ -1,15 +1,15 @@
 {{ define "content" }}
 <div class="mk-game">
-    <ul class="mk-grid"></ul>
-    <p class="mk-timer">00:00</p>
+	<ul class="mk-grid"></ul>
+	<p class="mk-timer">00:00</p>
 </div>
 {{ end }}
 
 {{ define "scripts" }}
 <script src="assets/game.js" defer></script>
 <script>
-    document.addEventListener("DOMContentLoaded", () => {
-        const mk = new MemoryKana();
-    });
+	document.addEventListener("DOMContentLoaded", () => {
+		const mk = new MemoryKana("{{ .CSRFToken }}");
+	});
 </script>
 {{ end }}

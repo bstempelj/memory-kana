@@ -28,6 +28,8 @@ services:
     ports:
       - 1234:1234
     environment:
+      - HOST_ENV=prod
+      - CSRF_AUTH_KEY=${CSRF_AUTH_KEY}
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
       - POSTGRES_USER=${POSTGRES_USER}

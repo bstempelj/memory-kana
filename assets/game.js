@@ -1,189 +1,198 @@
 class MemoryKana {
-    constructor() {
-        // grid and content
-        this.grid = document.querySelector(".mk-grid");
-        this.tiles;
+	constructor(csrfToken) {
+		this.csrfToken = csrfToken;
 
-        // dialog
-        this.dialog = document.querySelector('#mk-dialog');
-        this.playerScore = document.querySelector('#player-score');
+		// grid and content
+		this.grid = document.querySelector(".mk-grid");
+		this.tiles;
 
-        // timer
-        this.timer = document.querySelector(".mk-timer");
-        this.timerStarted;
-        this.timerHandle;
+		// dialog
+		this.dialog = document.querySelector('#mk-dialog');
+		this.playerScore = document.querySelector('#player-score');
 
-        // score
-        this.score = 0;
-        this.maxScore = 12;
+		// timer
+		this.timer = document.querySelector(".mk-timer");
+		this.timerStarted;
+		this.timerHandle;
 
-        // initialize game
-        this.init(this.hiragana);
-    }
+		// score
+		this.score = 0;
+		this.maxScore = 12;
 
-    init(kana) {
-        this.createTiles();
-        this.populateTiles(kana);
-        this.timerStarted = false;
-        this.initClickEvents();
-    }
+		// initialize game
+		this.init(this.hiragana);
+	}
 
-    startTimer() {
-        let seconds = 0;
-        let minutes = 0;
+	init(kana) {
+		this.createTiles();
+		this.populateTiles(kana);
+		this.timerStarted = false;
+		this.initClickEvents();
+	}
 
-        this.timerStarted = true;
+	startTimer() {
+		let seconds = 0;
+		let minutes = 0;
 
-        let format = (time) => {
-            return (time < 10) ? "0" + time : time;
-        };
+		this.timerStarted = true;
 
-        // display timer
-        this.timerHandle = setInterval(() => {
-            seconds++;
+		let format = (time) => {
+			return (time < 10) ? "0" + time : time;
+		};
 
-            if (seconds >= 60) {
-                seconds = 0;
-                minutes++;
-            }
+		// display timer
+		this.timerHandle = setInterval(() => {
+			seconds++;
 
-            this.timer.innerHTML = format(minutes) + ":" + format(seconds);
-        }, 1000);
-    }
+			if (seconds >= 60) {
+				seconds = 0;
+				minutes++;
+			}
 
-    initClickEvents() {
-        let clicked = null;
-        this.tiles.forEach((item) => {
-            item.addEventListener('click', () => {
-                // init timer on first click
-                if (!this.timerStarted) {
-                    this.startTimer();
-                }
+			this.timer.innerHTML = format(minutes) + ":" + format(seconds);
+		}, 1000);
+	}
 
-                // get clicked span
-                let span = item.children[0];
-                span.classList.add("clicked");
+	initClickEvents() {
+		let clicked = null;
+		this.tiles.forEach((item) => {
+			item.addEventListener('click', () => {
+				// init timer on first click
+				if (!this.timerStarted) {
+					this.startTimer();
+				}
 
-                // clicked 2-times
-                if (clicked) {
-                    // pair found
-                    if (clicked.innerHTML == span.dataset.pair) {
-                        // permanently show
-                        clicked.classList.add("show");
-                        span.classList.add("show");
+				// get clicked span
+				let span = item.children[0];
+				span.classList.add("clicked");
 
-                        // increase score
-                        this.score++;
-                    }
+				// clicked 2-times
+				if (clicked) {
+					// pair found
+					if (clicked.innerHTML == span.dataset.pair) {
+						// permanently show
+						clicked.classList.add("show");
+						span.classList.add("show");
 
-                    // game over with victory
-                    if (this.score == this.maxScore) {
-                        clearInterval(this.timerHandle);
+						// increase score
+						this.score++;
+					}
 
-                        const elapsedTime = this.timer.innerHTML;
+					// game over with victory
+					if (this.score == this.maxScore) {
+						clearInterval(this.timerHandle);
 
-                        // create form dinamically and submit
-                        // reason: make redirect from Go work automatically
-                        {
-                            const form = document.createElement("form");
-                            form.style.display = "none";
-                            form.method = "POST";
-                            form.action = "/scoreboard";
+						const elapsedTime = this.timer.innerHTML;
 
-                            const input = document.createElement("input");
-                            input.name = "player-time";
-                            input.value = elapsedTime;
-                            form.appendChild(input);
-                            document.body.appendChild(form);
-                            form.submit();
-                        }
-                    }
+						// create form dinamically and submit
+						// reason: make redirect from Go work automatically
+						{
+							const form = document.createElement("form");
+							form.style.display = "none";
+							form.method = "POST";
+							form.action = "/scoreboard";
 
-                    // hide clicked items after 200ms
-                    setTimeout(() => {
-                        clicked.classList.remove("clicked");
-                        span.classList.remove("clicked");
-                        clicked = null;
-                    }, 200);
-                } else {
-                    // save clicked item
-                    clicked = span;
-                }
-            });
-        });
-    };
+							const playerTimeInput = document.createElement("input");
+							playerTimeInput.name = "player-time";
+							playerTimeInput.value = elapsedTime;
+							form.appendChild(playerTimeInput);
+							document.body.appendChild(form);
 
-    createTiles() {
-        let numOfTiles = 24;
-        for (let i = 0; i < numOfTiles; i++) {
-            let li = document.createElement("li");
-            let span = document.createElement("span");
-            this.grid.appendChild(li).appendChild(span);
-        }
-        this.tiles = Array.prototype.slice.call(this.grid.querySelectorAll("li"))
-    }
+							const csrfInput = document.createElement("input");
+							csrfInput.name = "gorilla.csrf.Token";
+							csrfInput.value = this.csrfToken;
+							form.appendChild(csrfInput);
+							document.body.appendChild(form);
 
-    populateTiles(kanaType) {
-        let temp = this.tiles.slice();
-        while (temp.length > 0) {
-            // random remove from array
-            let kana = temp.splice(this.randomNumber(0, temp.length), 1)[0].children[0];
-            let romaji = temp.splice(this.randomNumber(0, temp.length), 1)[0].children[0];
-            // loop if duplicate is found
-            let prop = this.randomProperty(kanaType);
-            while (this.checkDuplicate(prop)) {
-                prop = this.randomProperty(kanaType);
-            }
-            // add kana and romaji
-            kana.setAttribute("data-pair", kanaType[prop]);
-            kana.innerHTML = prop;
-            romaji.setAttribute("data-pair", prop);
-            romaji.innerHTML = kanaType[prop];
-        }
-    }
+							form.submit();
+						}
+					}
 
-    checkDuplicate(test) {
-        for (let i = 0, len = this.tiles.length; i < len; i++) {
-            let span = this.tiles[i].children[0];
-            if (span.innerHTML == test) return true;
-        }
-        return false;
-    }
+					// hide clicked items after 200ms
+					setTimeout(() => {
+						clicked.classList.remove("clicked");
+						span.classList.remove("clicked");
+						clicked = null;
+					}, 200);
+				} else {
+					// save clicked item
+					clicked = span;
+				}
+			});
+		});
+	};
 
-    randomProperty(obj) {
-        let keys = Object.keys(obj);
-        return keys[keys.length * Math.random() << 0];
-    }
+	createTiles() {
+		let numOfTiles = 24;
+		for (let i = 0; i < numOfTiles; i++) {
+			let li = document.createElement("li");
+			let span = document.createElement("span");
+			this.grid.appendChild(li).appendChild(span);
+		}
+		this.tiles = Array.prototype.slice.call(this.grid.querySelectorAll("li"))
+	}
 
-    randomNumber(min, max) {
-        return Math.floor(Math.random() * (max - min)) + min;
-    }
+	populateTiles(kanaType) {
+		let temp = this.tiles.slice();
+		while (temp.length > 0) {
+			// random remove from array
+			let kana = temp.splice(this.randomNumber(0, temp.length), 1)[0].children[0];
+			let romaji = temp.splice(this.randomNumber(0, temp.length), 1)[0].children[0];
+			// loop if duplicate is found
+			let prop = this.randomProperty(kanaType);
+			while (this.checkDuplicate(prop)) {
+				prop = this.randomProperty(kanaType);
+			}
+			// add kana and romaji
+			kana.setAttribute("data-pair", kanaType[prop]);
+			kana.innerHTML = prop;
+			romaji.setAttribute("data-pair", prop);
+			romaji.innerHTML = kanaType[prop];
+		}
+	}
 
-    hiragana = {
-        "あ": "a", "い": "i", "う": "u", "え": "e", "お": "o",
-        "か": "ka", "き": "ki", "く": "ku", "け": "ke", "こ": "ko",
-        "さ": "sa", "し": "shi", "す": "su", "せ": "se", "そ": "so",
-        "た": "ta", "ち": "chi", "つ": "tsu", "て": "te", "と": "to",
-        "な": "na", "に": "ni", "ぬ": "nu", "ね": "ne", "の": "no",
-        "は": "ha", "ひ": "hi", "ふ": "fu", "へ": "he", "ほ": "ho",
-        "ま": "ma", "み": "mi", "む": "mu", "め": "me", "も": "mo",
-        "や": "ya", "ゆ": "yu", "よ": "yo",
-        "ら": "ra", "り": "ri", "る": "ru", "れ": "re", "ろ": "ro",
-        "わ": "wa", "を": "wo",
-        "ん": "n"
-    };
+	checkDuplicate(test) {
+		for (let i = 0, len = this.tiles.length; i < len; i++) {
+			let span = this.tiles[i].children[0];
+			if (span.innerHTML == test) return true;
+		}
+		return false;
+	}
 
-    katakana = {
-        "ア": "a", "イ": "i", "ウ": "u", "エ": "e", "オ": "o",
-        "カ": "ka", "キ": "ki", "ク": "ku", "ケ": "ke", "コ": "ko",
-        "サ": "sa", "シ": "shi", "ス": "su", "セ": "se", "ソ": "so",
-        "タ": "ta", "チ": "chi", "ツ": "tsu", "テ": "te", "ト": "to",
-        "ナ": "na", "ニ": "ni", "ヌ": "nu", "ネ": "ne", "ノ": "no",
-        "ハ": "ha", "ヒ": "hi", "フ": "hu", "ヘ": "he", "ホ": "ho",
-        "マ": "ma", "ミ": "mi", "ム": "mu", "メ": "me", "モ": "mo",
-        "ヤ": "ya", "ユ": "yu", "ヨ": "yo",
-        "ラ": "ra", "リ": "ri", "ル": "ru", "レ": "re", "ロ": "ro",
-        "ワ": "wa", "ヲ": "wo",
-        "ン": "n"
-    };
+	randomProperty(obj) {
+		let keys = Object.keys(obj);
+		return keys[keys.length * Math.random() << 0];
+	}
+
+	randomNumber(min, max) {
+		return Math.floor(Math.random() * (max - min)) + min;
+	}
+
+	hiragana = {
+		"あ": "a", "い": "i", "う": "u", "え": "e", "お": "o",
+		"か": "ka", "き": "ki", "く": "ku", "け": "ke", "こ": "ko",
+		"さ": "sa", "し": "shi", "す": "su", "せ": "se", "そ": "so",
+		"た": "ta", "ち": "chi", "つ": "tsu", "て": "te", "と": "to",
+		"な": "na", "に": "ni", "ぬ": "nu", "ね": "ne", "の": "no",
+		"は": "ha", "ひ": "hi", "ふ": "fu", "へ": "he", "ほ": "ho",
+		"ま": "ma", "み": "mi", "む": "mu", "め": "me", "も": "mo",
+		"や": "ya", "ゆ": "yu", "よ": "yo",
+		"ら": "ra", "り": "ri", "る": "ru", "れ": "re", "ろ": "ro",
+		"わ": "wa", "を": "wo",
+		"ん": "n"
+	};
+
+	katakana = {
+		"ア": "a", "イ": "i", "ウ": "u", "エ": "e", "オ": "o",
+		"カ": "ka", "キ": "ki", "ク": "ku", "ケ": "ke", "コ": "ko",
+		"サ": "sa", "シ": "shi", "ス": "su", "セ": "se", "ソ": "so",
+		"タ": "ta", "チ": "chi", "ツ": "tsu", "テ": "te", "ト": "to",
+		"ナ": "na", "ニ": "ni", "ヌ": "nu", "ネ": "ne", "ノ": "no",
+		"ハ": "ha", "ヒ": "hi", "フ": "hu", "ヘ": "he", "ホ": "ho",
+		"マ": "ma", "ミ": "mi", "ム": "mu", "メ": "me", "モ": "mo",
+		"ヤ": "ya", "ユ": "yu", "ヨ": "yo",
+		"ラ": "ra", "リ": "ri", "ル": "ru", "レ": "re", "ロ": "ro",
+		"ワ": "wa", "ヲ": "wo",
+		"ン": "n"
+	};
 }

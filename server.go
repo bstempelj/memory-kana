@@ -14,6 +14,7 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
+	 "github.com/gorilla/csrf"
 )
 
 const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -29,14 +30,15 @@ var assetsFS embed.FS
 var templatesFS embed.FS
 
 type PlayerTime struct {
-	Player string `json:"player"`
-	Time   time.Time `json:"time"`
+	Player string
+	Time   time.Time
 }
 
 type Page struct {
 	Home       bool
 	Scripts    bool
 	Scoreboard []PlayerTime
+	CSRFToken string
 }
 
 func getMenu(w http.ResponseWriter, r *http.Request) {
@@ -60,7 +62,10 @@ func getGame(w http.ResponseWriter, r *http.Request) {
 		"templates/game.html",
 	))
 
-	page := Page{Scripts: true}
+	page := Page{
+		Scripts: true,
+		CSRFToken: csrf.Token(r),
+	}
 
 	if err := t.Execute(w, page); err != nil {
 		log.Fatal(err)
@@ -93,6 +98,7 @@ func getScoreboard(w http.ResponseWriter, r *http.Request) {
 	page := Page{Scoreboard: scoreboard}
 
 	if err := t.Execute(w, page); err != nil {
+		// TODO: redirect to error page
 		log.Fatal(err)
 	}
 }
@@ -227,6 +233,25 @@ func main() {
 
 	port := 1234
 
+	csrfAuthKey, ok := os.LookupEnv("CSRF_AUTH_KEY")
+	if !ok {
+		log.Fatal("missing CSRF_AUTH_KEY env var")
+	}
+	csrfAuthKey = strings.TrimSpace(csrfAuthKey)
+
+	hostEnv, ok := os.LookupEnv("HOST_ENV")
+	if !ok {
+		log.Fatal("missing HOST_ENV env var")
+	}
+	hostEnv = strings.TrimSpace(hostEnv)
+
+	csrfSecure := false
+	if hostEnv == "prod" || hostEnv == "production" {
+		csrfSecure = true
+	}
+
+	CSRF := csrf.Protect([]byte(csrfAuthKey), csrf.Secure(csrfSecure))
+
 	log.Printf("Listening on port %v", port)
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%v", port), mux))
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%v", port), CSRF(mux)))
 }
