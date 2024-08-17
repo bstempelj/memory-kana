@@ -1,4 +1,6 @@
 {{ define "content" }}
+{{ if .Scoreboard }}
+<h2>Top 10 best times</h2>
 <table class="mk-scoreboard">
 	<thead>
 		<tr>
@@ -15,4 +17,7 @@
 		{{ end }}
 	</tbody>
 </table>
+{{ else }}
+<h2>No games played yet</h2>
+{{ end }}
 {{ end }}

@@ -192,7 +192,7 @@ func dbInsertPlayerTime(db *sql.DB, playerTime time.Time) error {
 func dbSelectPlayerTimes(db *sql.DB) ([]PlayerTime, error) {
 	var playerTimes []PlayerTime
 
-	res, err := db.Query(`select player, "time" from player_times order by "time"`)
+	res, err := db.Query(`select player, "time" from player_times order by "time" limit 10`)
 	if err != nil {
 		return nil, err
 	}
