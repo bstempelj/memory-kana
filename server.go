@@ -39,6 +39,11 @@ type Page struct {
 	Scripts    bool
 	Scoreboard []PlayerTime
 	CSRFToken string
+
+	// tmp
+	Name string
+	Time time.Time
+	Rank uint
 }
 
 func getMenu(w http.ResponseWriter, r *http.Request) {
@@ -73,8 +78,10 @@ func getGame(w http.ResponseWriter, r *http.Request) {
 }
 
 func getScoreboard(w http.ResponseWriter, r *http.Request) {
+	player := r.URL.Query().Get("p")
+
 	funcMap := template.FuncMap{
-		"parseTime": func(t time.Time) string {
+		"formatTime": func(t time.Time) string {
 			return fmt.Sprintf("%02d:%02d", t.Minute(), t.Second())
 		},
 	}
@@ -95,7 +102,21 @@ func getScoreboard(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 
-	page := Page{Scoreboard: scoreboard}
+	page := Page{
+		Scoreboard: scoreboard,
+	}
+
+	if player != "" {
+		playerTime, playerRank, err := dbSelectPlayerTimeRank(db, player)
+		if err != nil {
+			// TODO: redirect to error page
+			log.Fatal(err)
+		}
+
+		page.Name = player
+		page.Time = playerTime
+		page.Rank = playerRank
+	}
 
 	if err := t.Execute(w, page); err != nil {
 		// TODO: redirect to error page
@@ -112,13 +133,13 @@ func postScoreboard(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 
-	err = dbInsertPlayerTime(db, playerTime)
+	playerName, err := dbInsertPlayerTime(db, playerTime)
 	if err != nil {
 		// TODO: redirect to error page
 		log.Fatal(err)
 	}
 
-	http.Redirect(w, r, "/scoreboard", http.StatusSeeOther)
+	http.Redirect(w, r, "/scoreboard?p=" + playerName, http.StatusSeeOther)
 }
 
 func connect() (*sql.DB, error) {
@@ -170,7 +191,7 @@ func connect() (*sql.DB, error) {
 	return db, nil
 }
 
-func dbInsertPlayerTime(db *sql.DB, playerTime time.Time) error {
+func dbInsertPlayerTime(db *sql.DB, playerTime time.Time) (string, error) {
 	randHash := func(length int) string {
 		b := make([]byte, length)
 		for i := range b {
@@ -179,14 +200,16 @@ func dbInsertPlayerTime(db *sql.DB, playerTime time.Time) error {
 		return string(b)
 	}
 
+	playerName := "guest-" + randHash(8)
+
 	_, err := db.Exec(
 		"insert into player_times(player, time) values ($1, $2)",
-		"guest-"+randHash(8),
+		playerName,
 		playerTime)
 	if err != nil {
-		return err
+		return "", err
 	}
-	return nil
+	return playerName, nil
 }
 
 func dbSelectPlayerTimes(db *sql.DB) ([]PlayerTime, error) {
@@ -214,6 +237,25 @@ func dbSelectPlayerTimes(db *sql.DB) ([]PlayerTime, error) {
 	}
 	return playerTimes, nil
 }
+
+func dbSelectPlayerTimeRank(db *sql.DB, player string) (time.Time, uint, error) {
+	var playerTime time.Time
+	var playerRank uint
+
+	row := db.QueryRow(`select "time" from player_times where player = $1`, player)
+	err := row.Scan(&playerTime)
+	if err != nil && errors.Is(err, sql.ErrNoRows) {
+		return time.Time{}, 0, errors.New("no rows returned when querying for player time")
+	}
+
+	row = db.QueryRow(`select count(1) from player_times where "time" <= $1`, playerTime)
+	err = row.Scan(&playerRank)
+	if err != nil && errors.Is(err, sql.ErrNoRows) {
+		return time.Time{}, 0, errors.New("no rows returned when querying for player rank")
+	}
+
+	return playerTime, playerRank, nil
+} 
 
 func main() {
 	var err error

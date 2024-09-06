@@ -1,6 +1,11 @@
 {{ define "content" }}
 {{ if .Scoreboard }}
-<h2>Top 10 best times</h2>
+<h1>Top 10</h1>
+{{ if ne .Name "" }}
+<p class="mk-game-info-box">
+	Your generated name is <strong>{{ .Name }}</strong>, your time was <strong>{{ formatTime .Time }}</strong> and you ranked <strong>#{{ .Rank }}</strong>.
+</p>
+{{ end }}
 <table class="mk-scoreboard">
 	<thead>
 		<tr>
@@ -9,11 +14,28 @@
 		</tr>
 	</thead>
 	<tbody>
-		{{ range .Scoreboard }}
-		<tr>
-			<td>{{ .Player }}</td>
-			<td>{{ parseTime .Time }}</td>
-		</tr>
+		{{ if eq .Name "" }}
+			{{ range .Scoreboard }}
+				<tr>
+					<td>{{ .Player }}</td>
+					<td>{{ formatTime .Time }}</td>
+				</tr>
+			{{ end }}
+		{{ else }}
+			{{ $playerName := .Name }}
+			{{ range .Scoreboard }}
+				{{ if eq .Player $playerName }}
+				<tr style="background-color: green;">
+					<td>{{ .Player }}</td>
+					<td>{{ formatTime .Time }}</td>
+				</tr>
+				{{ else }}
+				<tr>
+					<td>{{ .Player }}</td>
+					<td>{{ formatTime .Time }}</td>
+				</tr>
+				{{ end }}
+			{{ end }}
 		{{ end }}
 	</tbody>
 </table>
