@@ -23,7 +23,7 @@ services:
       - prod
 
   server:
-    image: blazstempelj/memory-kana:0.0.1
+    image: blazstempelj/memory-kana:0.0.2
     restart: unless-stopped
     ports:
       - 1234:1234
