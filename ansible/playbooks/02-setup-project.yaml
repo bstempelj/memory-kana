@@ -1,0 +1,32 @@
+---
+
+- name: install memory-kana
+  user: ansible
+  hosts: all
+  become: true
+
+  tasks:
+    - name: create project directory
+      ansible.builtin.file:
+        path: /app
+        state: directory
+
+    - name: copy compose file
+      ansible.builtin.copy:
+        src: ../../docker-compose.yaml
+        dest: /app
+
+    - name: copy init db file
+      ansible.builtin.copy:
+        src: ../../init-db.sh
+        dest: /app
+
+    - name: copy env file
+      ansible.builtin.copy:
+        src: ../../.envrc
+        dest: /app/.env
+
+    - name: run compose file with prod profile
+      ansible.builtin.shell: |
+        cd /app
+        docker compose --profile prod up -d

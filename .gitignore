@@ -1,2 +1,5 @@
 memory-kana
 .envrc
+hosts.ini
+ansible-sshkey
+ansible-sshkey.pub
