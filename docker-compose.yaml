@@ -2,6 +2,7 @@
 services:
   postgres:
     image: postgres:16.3-alpine
+    container_name: postgres
     restart: unless-stopped
     shm_size: 128mb
     volumes:
@@ -18,12 +19,15 @@ services:
       interval: 5s
       timeout: 10s
       retries: 3
+    networks:
+      - mk_network
     profiles:
       - dev
       - prod
 
   server:
     image: blazstempelj/memory-kana:0.0.2
+    container_name: memory-kana
     restart: unless-stopped
     ports:
       - 1234:1234
@@ -38,8 +42,30 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - mk_network
     profiles:
       - prod
 
+  caddy:
+    image: caddy:2.8-alpine
+    container_name: caddy
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    ports:
+      - 443:443
+    networks:
+      - mk_network
+    profiles:
+      - prod
+
+networks:
+  mk_network:
+    driver: bridge
+
 volumes:
   pg_data:
+  caddy_data:
+  caddy_config:
