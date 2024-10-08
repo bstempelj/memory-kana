@@ -15,19 +15,15 @@ docker/tag/%: ## Tag the built docker image
 docker/push/%: ## Push the tagged docker image to docker hub
 	@docker image push blazstempelj/memory-kana:$*
 
-.PHONY: compose/dev/up compose/dev/down dev compose/prod/up compose/prod/down prod
-compose/dev/up:
+.PHONY: dev dev/down prod prod/down
+dev: ## Run compose with dev profile
 	@docker compose --profile dev up -d
 
-compose/dev/down:
+dev/down: ## Stop compose with dev profile
 	@docker compose --profile dev down
 
-dev: compose/dev/up
-
-compose/prod/up:
+prod: ## Run compose with prod profile
 	@docker compose --profile prod up -d
 
-compose/prod/down:
+prod/down: ## Stop compose with prod profilel
 	@docker compose --profile prod down
-
-prod: compose/prod/up
