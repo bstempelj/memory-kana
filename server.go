@@ -20,8 +20,44 @@ var assetFS embed.FS
 //go:embed templates
 var templateFS embed.FS
 
+var storageCfg storage.Config
+
+func init() {
+	// NOTE: env vars have carriage return at the end (\r) so we
+	// have to trim them to make concatenation and sprintf work
+	host, ok := os.LookupEnv("POSTGRES_HOST")
+	if !ok {
+		host = "localhost"
+	}
+	storageCfg.Host = strings.TrimSpace(host)
+
+	port, ok := os.LookupEnv("POSTGRES_PORT")
+	if !ok {
+		port = "5432"
+	}
+	storageCfg.Port = strings.TrimSpace(port)
+
+	user, ok := os.LookupEnv("POSTGRES_USER")
+	if !ok {
+		log.Fatal("missing POSTGRES_USER env var")
+	}
+	storageCfg.User = strings.TrimSpace(user)
+
+	password, ok := os.LookupEnv("POSTGRES_PASSWORD")
+	if !ok {
+		log.Fatal("missing POSTGRES_PASSWORD env var")
+	}
+	storageCfg.Password = strings.TrimSpace(password)
+
+	dbname, ok := os.LookupEnv("POSTGRES_DB")
+	if !ok {
+		log.Fatal("missing POSTGRES_DB env var")
+	}
+	storageCfg.Database = strings.TrimSpace(dbname)
+}
+
 func main() {
-	db, err := storage.Connect()
+	db, err := storage.Connect(storageCfg)
 	if err != nil {
 		log.Fatal(err)
 	}

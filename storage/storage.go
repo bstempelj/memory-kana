@@ -6,8 +6,6 @@ import (
 	"fmt"
 	_ "github.com/lib/pq"
 	"math/rand"
-	"os"
-	"strings"
 	"time"
 )
 
@@ -20,42 +18,18 @@ type PlayerTime struct {
 	Time   time.Time
 }
 
-func Connect() (*sql.DB, error) {
-	// NOTE: env vars have carriage return at the end (\r) so we
-	// have to trim them to make concatenation and sprintf work
-	host, ok := os.LookupEnv("POSTGRES_HOST")
-	if !ok {
-		host = "localhost"
-	}
-	host = strings.TrimSpace(host)
+type Config struct {
+	Host     string
+	Port     string
+	User     string
+	Password string
+	Database string
+}
 
-	port, ok := os.LookupEnv("POSTGRES_PORT")
-	if !ok {
-		port = "5432"
-	}
-	port = strings.TrimSpace(port)
-
-	user, ok := os.LookupEnv("POSTGRES_USER")
-	if !ok {
-		return nil, errors.New("missing POSTGRES_USER env var")
-	}
-	user = strings.TrimSpace(user)
-
-	password, ok := os.LookupEnv("POSTGRES_PASSWORD")
-	if !ok {
-		return nil, errors.New("missing POSTGRES_PASSWORD env var")
-	}
-	password = strings.TrimSpace(password)
-
-	dbname, ok := os.LookupEnv("POSTGRES_DB")
-	if !ok {
-		return nil, errors.New("missing POSTGRES_DB env var")
-	}
-	dbname = strings.TrimSpace(dbname)
-
+func Connect(cfg Config) (*sql.DB, error) {
 	psqlInfo := fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbname)
+		cfg.Host, cfg.Port, cfg.User, cfg.Password, cfg.Database)
 
 	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
