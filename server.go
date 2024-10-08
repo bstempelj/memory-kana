@@ -3,25 +3,18 @@ package main
 import (
 	"database/sql"
 	"embed"
-	"errors"
 	"fmt"
 	"log"
-	"math/rand"
 	"net/http"
 	"os"
 	"strings"
 	"text/template"
 	"time"
 
-	_ "github.com/lib/pq"
-	 "github.com/gorilla/csrf"
+	"github.com/gorilla/csrf"
+
+	"github.com/bstempelj/memory-kana/storage"
 )
-
-const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-
-var seededRand = rand.New(rand.NewSource(time.Now().UnixNano()))
-
-var db *sql.DB
 
 //go:embed assets
 var assetsFS embed.FS
@@ -29,16 +22,12 @@ var assetsFS embed.FS
 //go:embed templates
 var templatesFS embed.FS
 
-type PlayerTime struct {
-	Player string
-	Time   time.Time
-}
-
 type Page struct {
 	Home       bool
 	Scripts    bool
-	Scoreboard []PlayerTime
-	CSRFToken string
+	// todo: define template type with time=string
+	Scoreboard []storage.PlayerTime
+	CSRFToken  string
 
 	// tmp
 	Name string
@@ -46,231 +35,122 @@ type Page struct {
 	Rank uint
 }
 
-func getMenu(w http.ResponseWriter, r *http.Request) {
-	t := template.Must(template.ParseFS(
-		templatesFS,
-		"templates/base.html",
-		"templates/menu.html",
-	))
-	
-	page := Page{Home: true}
+func getMenu(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		t := template.Must(template.ParseFS(
+			templatesFS,
+			"templates/base.html",
+			"templates/menu.html",
+		))
 
-	if err := t.Execute(w, page); err != nil {
-		log.Fatal(err)
+		page := Page{Home: true}
+
+		if err := t.Execute(w, page); err != nil {
+			log.Fatal(err)
+		}
 	}
 }
 
-func getGame(w http.ResponseWriter, r *http.Request) {
-	t := template.Must(template.ParseFS(
-		templatesFS,
-		"templates/base.html",
-		"templates/game.html",
-	))
+func getGame(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		t := template.Must(template.ParseFS(
+			templatesFS,
+			"templates/base.html",
+			"templates/game.html",
+		))
 
-	page := Page{
-		Scripts: true,
-		CSRFToken: csrf.Token(r),
-	}
+		page := Page{
+			Scripts:   true,
+			CSRFToken: csrf.Token(r),
+		}
 
-	if err := t.Execute(w, page); err != nil {
-		log.Fatal(err)
+		if err := t.Execute(w, page); err != nil {
+			log.Fatal(err)
+		}
 	}
 }
 
-func getScoreboard(w http.ResponseWriter, r *http.Request) {
-	player := r.URL.Query().Get("p")
+func getScoreboard(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		player := r.URL.Query().Get("p")
 
-	funcMap := template.FuncMap{
-		"formatTime": func(t time.Time) string {
-			return fmt.Sprintf("%02d:%02d", t.Minute(), t.Second())
-		},
-	}
+		funcMap := template.FuncMap{
+			"formatTime": func(t time.Time) string {
+				return fmt.Sprintf("%02d:%02d", t.Minute(), t.Second())
+			},
+		}
 
-	t, err := template.New("base.html").Funcs(funcMap).ParseFS(
-		templatesFS,
-		"templates/base.html",
-		"templates/scoreboard.html",
-	)
+		t, err := template.New("base.html").Funcs(funcMap).ParseFS(
+			templatesFS,
+			"templates/base.html",
+			"templates/scoreboard.html",
+		)
 
-	if err != nil {
-		log.Fatal(err)
-	}
+		if err != nil {
+			log.Fatal(err)
+		}
 
-	scoreboard, err := dbSelectPlayerTimes(db)
-	if err != nil {
-		// TODO: redirect to error page
-		log.Fatal(err)
-	}
-
-	page := Page{
-		Scoreboard: scoreboard,
-	}
-
-	if player != "" {
-		playerTime, playerRank, err := dbSelectPlayerTimeRank(db, player)
+		scoreboard, err := storage.SelectPlayerTimes(db)
 		if err != nil {
 			// TODO: redirect to error page
 			log.Fatal(err)
 		}
 
-		page.Name = player
-		page.Time = playerTime
-		page.Rank = playerRank
-	}
-
-	if err := t.Execute(w, page); err != nil {
-		// TODO: redirect to error page
-		log.Fatal(err)
-	}
-}
-
-func postScoreboard(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
-
-	playerTime, err := time.Parse("04:05", r.FormValue("player-time"))
-	if err != nil {
-		// TODO: redirect to error page
-		log.Fatal(err)
-	}
-
-	playerName, err := dbInsertPlayerTime(db, playerTime)
-	if err != nil {
-		// TODO: redirect to error page
-		log.Fatal(err)
-	}
-
-	http.Redirect(w, r, "/scoreboard?p=" + playerName, http.StatusSeeOther)
-}
-
-func connect() (*sql.DB, error) {
-	// NOTE: env vars have carriage return at the end (\r) so we
-	// have to trim them to make concatenation and sprintf work
-	host, ok := os.LookupEnv("POSTGRES_HOST")
-	if !ok {
-		host = "localhost"
-	}
-	host = strings.TrimSpace(host)
-
-	port, ok := os.LookupEnv("POSTGRES_PORT")
-	if !ok {
-		port = "5432"
-	}
-	port = strings.TrimSpace(port)
-
-	user, ok := os.LookupEnv("POSTGRES_USER")
-	if !ok {
-		return nil, errors.New("missing POSTGRES_USER env var")
-	}
-	user = strings.TrimSpace(user)
-
-	password, ok := os.LookupEnv("POSTGRES_PASSWORD")
-	if !ok {
-		return nil, errors.New("missing POSTGRES_PASSWORD env var")
-	}
-	password = strings.TrimSpace(password)
-
-	dbname, ok := os.LookupEnv("POSTGRES_DB")
-	if !ok {
-		return nil, errors.New("missing POSTGRES_DB env var")
-	}
-	dbname = strings.TrimSpace(dbname)
-
-	psqlInfo := fmt.Sprintf(
-		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbname)
-
-	db, err := sql.Open("postgres", psqlInfo)
-	if err != nil {
-		return nil, err
-	}
-
-	err = db.Ping()
-	if err != nil {
-		return nil, err
-	}
-	return db, nil
-}
-
-func dbInsertPlayerTime(db *sql.DB, playerTime time.Time) (string, error) {
-	randHash := func(length int) string {
-		b := make([]byte, length)
-		for i := range b {
-			b[i] = charset[seededRand.Intn(len(charset))]
+		page := Page{
+			Scoreboard: scoreboard,
 		}
-		return string(b)
-	}
 
-	playerName := "guest-" + randHash(8)
+		if player != "" {
+			playerTime, playerRank, err := storage.SelectPlayerTimeRank(db, player)
+			if err != nil {
+				// TODO: redirect to error page
+				log.Fatal(err)
+			}
 
-	_, err := db.Exec(
-		"insert into player_times(player, time) values ($1, $2)",
-		playerName,
-		playerTime)
-	if err != nil {
-		return "", err
+			page.Name = player
+			page.Time = playerTime
+			page.Rank = playerRank
+		}
+
+		if err := t.Execute(w, page); err != nil {
+			// TODO: redirect to error page
+			log.Fatal(err)
+		}
 	}
-	return playerName, nil
 }
 
-func dbSelectPlayerTimes(db *sql.DB) ([]PlayerTime, error) {
-	var playerTimes []PlayerTime
+func postScoreboard(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		r.ParseForm()
 
-	res, err := db.Query(`select player, "time" from player_times order by "time" limit 10`)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Close()
-
-	for res.Next() {
-		var playerTime PlayerTime
-
-		err := res.Scan(&playerTime.Player, &playerTime.Time)
+		playerTime, err := time.Parse("04:05", r.FormValue("player-time"))
 		if err != nil {
-			return nil, err
+			// TODO: redirect to error page
+			log.Fatal(err)
 		}
 
-		playerTimes = append(playerTimes, playerTime)
-	}
+		playerName, err := storage.InsertPlayerTime(db, playerTime)
+		if err != nil {
+			// TODO: redirect to error page
+			log.Fatal(err)
+		}
 
-	if err = res.Err(); err != nil {
-		return nil, err
+		http.Redirect(w, r, "/scoreboard?p="+playerName, http.StatusSeeOther)
 	}
-	return playerTimes, nil
 }
-
-func dbSelectPlayerTimeRank(db *sql.DB, player string) (time.Time, uint, error) {
-	var playerTime time.Time
-	var playerRank uint
-
-	row := db.QueryRow(`select "time" from player_times where player = $1`, player)
-	err := row.Scan(&playerTime)
-	if err != nil && errors.Is(err, sql.ErrNoRows) {
-		return time.Time{}, 0, errors.New("no rows returned when querying for player time")
-	}
-
-	row = db.QueryRow(`select count(1) from player_times where "time" <= $1`, playerTime)
-	err = row.Scan(&playerRank)
-	if err != nil && errors.Is(err, sql.ErrNoRows) {
-		return time.Time{}, 0, errors.New("no rows returned when querying for player rank")
-	}
-
-	return playerTime, playerRank, nil
-} 
 
 func main() {
-	var err error
-
-	db, err = connect()
+	db, err := storage.Connect()
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer db.Close()
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /", getMenu)
-	mux.HandleFunc("GET /game", getGame)
-	mux.HandleFunc("GET /scoreboard", getScoreboard)
-	mux.HandleFunc("POST /scoreboard", postScoreboard)
+	mux.HandleFunc("GET /", getMenu(db))
+	mux.HandleFunc("GET /game", getGame(db))
+	mux.HandleFunc("GET /scoreboard", getScoreboard(db))
+	mux.HandleFunc("POST /scoreboard", postScoreboard(db))
 	mux.Handle("GET /assets/", http.FileServer(http.FS(assetsFS)))
 
 	port := 1234
