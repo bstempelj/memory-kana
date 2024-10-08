@@ -5,10 +5,10 @@ import (
 	"errors"
 	"fmt"
 	_ "github.com/lib/pq"
+	"math/rand"
 	"os"
 	"strings"
 	"time"
-	"math/rand"
 )
 
 const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
