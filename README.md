@@ -13,7 +13,7 @@ Install
 Create an `.envrc` file by copying `.envrc.example`
 
 ```sh
-cp .envrc.example .env
+cp .envrc.example .envrc
 ```
 
 and allow it's execution
@@ -38,7 +38,7 @@ go build && ./memory-kana
 go run .
 ```
 
-then open your browser and go to `localhost:1234`.
+then open your browser and go to `http://localhost:1234`.
 
 ### Production build
 
@@ -48,7 +48,7 @@ Just run
 make prod
 ```
 
-then open your browser and go to `localhost:1234`.
+then open your browser and go to `https://memory-kana.localhost`.
 
 ## How it looks
 ![](howitlooks.png)
