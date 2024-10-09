@@ -30,6 +30,35 @@ class MemoryKana {
 		this.initClickEvents();
 	}
 
+	async startTimerOnServer() {
+		try {
+			const res = await fetch('/game/timer/start');
+			const data = await res.json();
+
+			const startTime = new Date(data.serverStartTime);
+			const currTime = new Date();
+
+			const elapsed = currTime - startTime;
+			this.startTimeOnClient(elapsed);
+		} catch (err) {
+			console.error('error starting timer:', err);
+		}
+	}
+
+	startTimerOnClient(elapsed) {
+		let renderTimer = () => {
+			let minutes = (elapsed / 1000 / 60).toFixed(2)
+			let seconds = (elapsed / 1000).toFixed(2)
+			this.timer.textContent = `${minutes}:${seconds}`
+		};
+
+		const step = 1000; // time step of 1s
+		setInterval(() => {
+			renderTimer();
+			elapsed += step;
+		}, step);
+	}
+
 	startTimer() {
 		let seconds = 0;
 		let minutes = 0;
