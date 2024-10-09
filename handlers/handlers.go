@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"database/sql"
 	"embed"
 	"fmt"
@@ -11,6 +12,19 @@ import (
 	"text/template"
 	"time"
 )
+
+type Timer struct {
+	StartTime time.Time
+	StopTime *time.Time
+}
+
+type TimerResponse struct {
+	StartTime time.Time `json:"startTime"`
+	StopTime *time.Time `json:"stopTime,omitempty"`
+}
+
+// todo add a sync.Map for multiple client with unique client ids
+var globalTimer Timer
 
 type Page struct {
 	Home    bool
@@ -57,6 +71,46 @@ func GetGame(templateFS embed.FS, db *sql.DB) http.HandlerFunc {
 		if err := t.Execute(w, page); err != nil {
 			log.Fatal(err)
 		}
+	}
+}
+
+type TimerStartResponse struct {
+	StartTime time.Time
+}
+
+type TimerStopResponse struct {
+	StartTime time.Time
+}
+
+func GetTimer(w http.ResponseWriter, r *http.Request) {
+	action := r.URL.Query().Get("action")
+
+	var response TimerResponse
+
+	switch action {
+	case "start":
+		globalTimer = Timer{
+			StartTime: time.Now(),
+		}
+		response = TimerResponse{
+			StartTime: globalTimer.StartTime,
+		}
+	case "stop":
+		stopTime := time.Now()
+		globalTimer.StopTime = &stopTime
+		response = TimerResponse{
+			StartTime: globalTimer.StartTime,
+			StopTime: globalTimer.StopTime,
+		}
+	default:
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	err := json.NewEncoder(w).Encode(response)
+	if err != nil {
+		log.Fatal(err)
 	}
 }
 
