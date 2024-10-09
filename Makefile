@@ -5,6 +5,10 @@ help: ## Display all Makefile commands
 	@grep -E '^[a-z.A-Z_-]+.*?## .*$$' $(MAKEFILE_LIST) \
 	| awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
+.PHONY: fmt
+fmt: ## Run gofmt recursively
+	@go fmt ./...
+
 .PHONY: docker/build docker/tag/% docker/push/%
 docker/build: ## Build a docker image
 	@docker build -t memory-kana .
