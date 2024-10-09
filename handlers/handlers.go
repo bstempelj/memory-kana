@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	"encoding/json"
 	"database/sql"
 	"embed"
+	"encoding/json"
 	"fmt"
 	"github.com/bstempelj/memory-kana/storage"
 	"github.com/gorilla/csrf"
@@ -15,12 +15,12 @@ import (
 
 type Timer struct {
 	StartTime time.Time
-	StopTime *time.Time
+	StopTime  *time.Time
 }
 
 type TimerResponse struct {
-	StartTime time.Time `json:"startTime"`
-	StopTime *time.Time `json:"stopTime,omitempty"`
+	StartTime time.Time  `json:"startTime"`
+	StopTime  *time.Time `json:"stopTime,omitempty"`
 }
 
 // todo add a sync.Map for multiple client with unique client ids
@@ -100,7 +100,7 @@ func GetTimer(w http.ResponseWriter, r *http.Request) {
 		globalTimer.StopTime = &stopTime
 		response = TimerResponse{
 			StartTime: globalTimer.StartTime,
-			StopTime: globalTimer.StopTime,
+			StopTime:  globalTimer.StopTime,
 		}
 	default:
 		w.WriteHeader(http.StatusBadRequest)
