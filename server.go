@@ -15,10 +15,10 @@ import (
 )
 
 //go:embed assets
-var assetFS embed.FS
+var assets embed.FS
 
 //go:embed templates
-var templateFS embed.FS
+var templates embed.FS
 
 var storageCfg storage.Config
 
@@ -64,11 +64,11 @@ func main() {
 	defer db.Close()
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /", handlers.GetMenu(templateFS, db))
-	mux.HandleFunc("GET /game", handlers.GetGame(templateFS, db))
-	mux.HandleFunc("GET /scoreboard", handlers.GetScoreboard(templateFS, db))
+	mux.HandleFunc("GET /", handlers.GetMenu(templates, db))
+	mux.HandleFunc("GET /game", handlers.GetGame(templates, db))
+	mux.HandleFunc("GET /scoreboard", handlers.GetScoreboard(templates, db))
 	mux.HandleFunc("POST /scoreboard", handlers.PostScoreboard(db))
-	mux.Handle("GET /assets/", http.FileServer(http.FS(assetFS)))
+	mux.Handle("GET /assets/", http.FileServer(http.FS(assets)))
 
 	port := 1234
 
