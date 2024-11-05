@@ -15,6 +15,8 @@ class MemoryKana {
 		this.timerStarted;
 		this.timerHandle;
 
+		this.serverTimer = new Timer();
+
 		// score
 		this.score = 0;
 		this.maxScore = 12;
@@ -28,35 +30,6 @@ class MemoryKana {
 		this.populateTiles(kana);
 		this.timerStarted = false;
 		this.initClickEvents();
-	}
-
-	async startTimerOnServer() {
-		try {
-			const res = await fetch('/game/timer/start');
-			const data = await res.json();
-
-			const startTime = new Date(data.serverStartTime);
-			const currTime = new Date();
-
-			const elapsed = currTime - startTime;
-			this.startTimeOnClient(elapsed);
-		} catch (err) {
-			console.error('error starting timer:', err);
-		}
-	}
-
-	startTimerOnClient(elapsed) {
-		let renderTimer = () => {
-			let minutes = (elapsed / 1000 / 60).toFixed(2)
-			let seconds = (elapsed / 1000).toFixed(2)
-			this.timer.textContent = `${minutes}:${seconds}`
-		};
-
-		const step = 1000; // time step of 1s
-		setInterval(() => {
-			renderTimer();
-			elapsed += step;
-		}, step);
 	}
 
 	startTimer() {
@@ -89,6 +62,7 @@ class MemoryKana {
 				// init timer on first click
 				if (!this.timerStarted) {
 					this.startTimer();
+					this.serverTimer.Start();
 				}
 
 				// get clicked span
@@ -110,6 +84,7 @@ class MemoryKana {
 					// game over with victory
 					if (this.score == this.maxScore) {
 						clearInterval(this.timerHandle);
+						this.serverTimer.Stop();
 
 						const elapsedTime = this.timer.innerHTML;
 
@@ -224,4 +199,65 @@ class MemoryKana {
 		"ワ": "wa", "ヲ": "wo",
 		"ン": "n"
 	};
+}
+
+class Timer {
+	constructor() {
+		this.running = false;
+		this.intervalHandle = null;
+		this.domTimer = document.querySelector(".mk-timer");
+	}
+
+	Start() {
+		this.startServerTimer((elapsed) => {
+			const step = 1000; // time step of 1s
+			this.intervalHandle = setInterval(() => {
+				this.renderTimer(elapsed);
+				elapsed += step;
+			}, step);
+		});
+	}
+
+	Stop() {
+		this.stopServerTimer((elapsed) => {
+			clearInterval(this.intervalHandle);
+			console.log('elapsed:', elapsed);
+		});
+	}
+
+	async startServerTimer(handler) {
+		try {
+			const resp = await fetch('/game/timer?action=start');
+			const data = await resp.json();
+
+			const startTime = new Date(data.startTime);
+			const currTime = new Date();
+
+			const elapsed = currTime - startTime;
+			handler(elapsed);
+		} catch (err) {
+			console.error('error starting timer:', err);
+		}
+	}
+
+	async stopServerTimer(handler) {
+		try {
+			const resp = await fetch('/game/timer?action=stop');
+			const data = await resp.json();
+
+			const startTime = new Date(data.startTime);
+			const stopTime = new Date(data.stopTime);
+
+			const elapsed = stopTime - startTime;
+			handler(elapsed);
+		} catch (err) {
+			console.error('error stopping timer:', err);
+		}
+	}
+
+	renderTimer(elapsed) {
+		let minutes = (elapsed / 1000 / 60).toFixed(2);
+		let seconds = (elapsed / 1000).toFixed(2);
+		this.domTimer.textContent = `${minutes}:${seconds}`;
+	}
 }
