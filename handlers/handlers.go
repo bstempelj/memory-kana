@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"strconv"
 	"database/sql"
 	"embed"
 	"encoding/json"
@@ -112,7 +113,7 @@ func GetScoreboard(templateFS embed.FS, db *sql.DB) http.HandlerFunc {
 
 		funcMap := template.FuncMap{
 			"formatTime": func(t time.Time) string {
-				return fmt.Sprintf("%02d:%02d", t.Minute(), t.Second())
+				return fmt.Sprintf("%02d:%02d:%02d", t.Minute(), t.Second(), t.Nanosecond() / 1_000_000)
 			},
 		}
 
@@ -159,11 +160,12 @@ func PostScoreboard(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		r.ParseForm()
 
-		playerTime, err := time.Parse("04:05", r.FormValue("player-time"))
+		unixMilli, err := strconv.ParseInt(r.FormValue("player-time"), 10, 64)
 		if err != nil {
-			// TODO: redirect to error page
 			log.Fatal(err)
 		}
+
+		playerTime := time.UnixMilli(unixMilli)
 
 		playerName, err := storage.InsertPlayerTime(db, playerTime)
 		if err != nil {

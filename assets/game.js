@@ -11,10 +11,6 @@ class MemoryKana {
 		this.playerScore = document.querySelector('#player-score');
 
 		// timer
-		this.timer = document.querySelector(".mk-timer");
-		this.timerStarted;
-		this.timerHandle;
-
 		this.serverTimer = new Timer();
 
 		// score
@@ -32,37 +28,14 @@ class MemoryKana {
 		this.initClickEvents();
 	}
 
-	startTimer() {
-		let seconds = 0;
-		let minutes = 0;
-
-		this.timerStarted = true;
-
-		let format = (time) => {
-			return (time < 10) ? "0" + time : time;
-		};
-
-		// display timer
-		this.timerHandle = setInterval(() => {
-			seconds++;
-
-			if (seconds >= 60) {
-				seconds = 0;
-				minutes++;
-			}
-
-			this.timer.innerHTML = format(minutes) + ":" + format(seconds);
-		}, 1000);
-	}
-
 	initClickEvents() {
 		let clicked = null;
 		this.tiles.forEach((item) => {
 			item.addEventListener('click', () => {
 				// init timer on first click
 				if (!this.timerStarted) {
-					this.startTimer();
 					this.serverTimer.Start();
+					this.timerStarted = true;
 				}
 
 				// get clicked span
@@ -83,14 +56,9 @@ class MemoryKana {
 
 					// game over with victory
 					if (this.score == this.maxScore) {
-						clearInterval(this.timerHandle);
-						this.serverTimer.Stop();
-
-						const elapsedTime = this.timer.innerHTML;
-
-						// create form dinamically and submit
-						// reason: make redirect from Go work automatically
-						{
+						this.serverTimer.Stop((elapsedTime) => {
+							// create form dinamically and submit
+							// reason: make redirect from Go work automatically
 							const form = document.createElement("form");
 							form.style.display = "none";
 							form.method = "POST";
@@ -109,7 +77,7 @@ class MemoryKana {
 							document.body.appendChild(form);
 
 							form.submit();
-						}
+						});
 					}
 
 					// hide clicked items after 200ms
@@ -223,6 +191,11 @@ class Timer {
 		});
 	}
 
+	Stop(handler) {
+		clearInterval(this.intervalHandle);
+		this.stopServerTimer(handler);
+	}
+
 	async startServerTimer(handler) {
 		try {
 			const resp = await fetch('/game/timer?action=start');
@@ -235,6 +208,16 @@ class Timer {
 			handler(startTime, latency);
 		} catch (err) {
 			console.error('error starting timer:', err);
+		}
+	}
+
+	async stopServerTimer(handler) {
+		try {
+			const resp = await fetch('/game/timer?action=stop');
+			const data = await resp.json();
+			handler(data.stopTime - data.startTime);
+		} catch (err) {
+			console.error('error stopping timer:', err);
 		}
 	}
 
