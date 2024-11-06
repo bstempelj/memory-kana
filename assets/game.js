@@ -209,19 +209,17 @@ class Timer {
 	}
 
 	Start() {
-		this.startServerTimer((elapsed) => {
-			const step = 1000; // time step of 1s
-			this.intervalHandle = setInterval(() => {
-				this.renderTimer(elapsed);
-				elapsed += step;
-			}, step);
-		});
-	}
+		this.startServerTimer((startTime, latency) => {
+			let elapsed = latency;
+			let prevTime = startTime;
+			this.renderTimer(latency);
 
-	Stop() {
-		this.stopServerTimer((elapsed) => {
-			clearInterval(this.intervalHandle);
-			console.log('elapsed:', elapsed);
+			this.intervalHandle = setInterval(() => {
+				let currTime = Date.now();
+				elapsed += currTime - prevTime;
+				this.renderTimer(elapsed);
+				prevTime = currTime;
+			}, 1000);
 		});
 	}
 
@@ -230,34 +228,25 @@ class Timer {
 			const resp = await fetch('/game/timer?action=start');
 			const data = await resp.json();
 
-			const startTime = new Date(data.startTime);
-			const currTime = new Date();
+			const currTime = Date.now();
+			const startTime = data.startTime;
 
-			const elapsed = currTime - startTime;
-			handler(elapsed);
+			const latency = currTime - startTime;
+			handler(startTime, latency);
 		} catch (err) {
 			console.error('error starting timer:', err);
 		}
 	}
 
-	async stopServerTimer(handler) {
-		try {
-			const resp = await fetch('/game/timer?action=stop');
-			const data = await resp.json();
-
-			const startTime = new Date(data.startTime);
-			const stopTime = new Date(data.stopTime);
-
-			const elapsed = stopTime - startTime;
-			handler(elapsed);
-		} catch (err) {
-			console.error('error stopping timer:', err);
-		}
-	}
-
 	renderTimer(elapsed) {
-		let minutes = (elapsed / 1000 / 60).toFixed(2);
-		let seconds = (elapsed / 1000).toFixed(2);
-		this.domTimer.textContent = `${minutes}:${seconds}`;
+		const minutes = Math.floor(elapsed / (1000 * 60));
+		elapsed %= (1000 * 60);
+
+		const seconds = Math.floor(elapsed / 1000);
+
+		const mm = minutes.toString().padStart(2, '0');
+		const ss = seconds.toString().padStart(2, '0');
+
+		this.domTimer.textContent = `${mm}:${ss}`;
 	}
 }

@@ -14,13 +14,13 @@ import (
 )
 
 type Timer struct {
-	StartTime time.Time
-	StopTime  *time.Time
+	StartTime int64
+	StopTime  *int64
 }
 
 type TimerResponse struct {
-	StartTime time.Time  `json:"startTime"`
-	StopTime  *time.Time `json:"stopTime,omitempty"`
+	StartTime int64  `json:"startTime"`
+	StopTime  *int64 `json:"stopTime,omitempty"`
 }
 
 // todo add a sync.Map for multiple client with unique client ids
@@ -74,14 +74,6 @@ func GetGame(templateFS embed.FS, db *sql.DB) http.HandlerFunc {
 	}
 }
 
-type TimerStartResponse struct {
-	StartTime time.Time
-}
-
-type TimerStopResponse struct {
-	StartTime time.Time
-}
-
 func GetTimer(w http.ResponseWriter, r *http.Request) {
 	action := r.URL.Query().Get("action")
 
@@ -90,13 +82,13 @@ func GetTimer(w http.ResponseWriter, r *http.Request) {
 	switch action {
 	case "start":
 		globalTimer = Timer{
-			StartTime: time.Now(),
+			StartTime: time.Now().UnixMilli(),
 		}
 		response = TimerResponse{
 			StartTime: globalTimer.StartTime,
 		}
 	case "stop":
-		stopTime := time.Now()
+		stopTime := time.Now().UnixMilli()
 		globalTimer.StopTime = &stopTime
 		response = TimerResponse{
 			StartTime: globalTimer.StartTime,
