@@ -40,15 +40,5 @@ go run .
 
 then open your browser and go to `http://localhost:1234`.
 
-### Production build
-
-Just run
-
-```sh
-make prod
-```
-
-then open your browser and go to `https://memory-kana.localhost`.
-
 ## How it looks
 ![](howitlooks.png)
