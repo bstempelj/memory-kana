@@ -1,4 +1,4 @@
-FROM golang:1.22 AS build-stage
+FROM golang:1.23.2 AS build-stage
 
 WORKDIR /app
 
@@ -9,7 +9,7 @@ COPY . .
 
 RUN CGO_ENABLED=0 GOOS=linux go build -o memory-kana
 
-FROM gcr.io/distroless/base-debian11 AS build-release-stage
+FROM gcr.io/distroless/base-debian12 AS release-stage
 
 WORKDIR /
 
