@@ -1,7 +1,0 @@
-memory-kana.localhost {
-    reverse_proxy memory-kana:1234
-    encode gzip
-    log {
-        output stdout
-    }
-}
