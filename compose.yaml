@@ -4,12 +4,12 @@ services:
     image: postgres:16.3-alpine
     container_name: postgres
     restart: unless-stopped
+    ports:
+      - 127.0.0.1:5432:5432
     shm_size: 128mb
     volumes:
       - pg_data:/var/lib/postgresql/data
       - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
-    ports:
-      - 5432:5432
     environment:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
@@ -30,7 +30,7 @@ services:
     container_name: memory-kana
     restart: unless-stopped
     ports:
-      - 1234:1234
+      - 127.0.0.1:1234:1234
     environment:
       - HOST_ENV=prod
       - CSRF_AUTH_KEY=${CSRF_AUTH_KEY}
