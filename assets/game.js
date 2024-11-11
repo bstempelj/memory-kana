@@ -174,6 +174,7 @@ class Timer {
 		this.running = false;
 		this.intervalHandle = null;
 		this.domTimer = document.querySelector(".mk-timer");
+		this.timerID = "";
 	}
 
 	Start() {
@@ -201,6 +202,8 @@ class Timer {
 			const resp = await fetch('/game/timer?action=start');
 			const data = await resp.json();
 
+			this.timerID = data.timerID;
+
 			const currTime = Date.now();
 			const startTime = data.startTime;
 
@@ -213,7 +216,7 @@ class Timer {
 
 	async stopServerTimer(handler) {
 		try {
-			const resp = await fetch('/game/timer?action=stop');
+			const resp = await fetch('/game/timer?action=stop&tid=' + this.timerID);
 			const data = await resp.json();
 			handler(data.stopTime - data.startTime);
 		} catch (err) {

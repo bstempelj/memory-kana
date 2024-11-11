@@ -6,26 +6,53 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
-	"github.com/bstempelj/memory-kana/storage"
-	"github.com/gorilla/csrf"
 	"log"
 	"net/http"
 	"text/template"
 	"time"
+	"sync"
+
+	"github.com/bstempelj/memory-kana/storage"
+	"github.com/bstempelj/memory-kana/utils"
+
+	"github.com/gorilla/csrf"
 )
 
-type Timer struct {
-	StartTime int64
-	StopTime  *int64
-}
-
 type TimerResponse struct {
+	TimerID string `json:"timerID"`
 	StartTime int64  `json:"startTime"`
 	StopTime  *int64 `json:"stopTime,omitempty"`
 }
 
-// todo add a sync.Map for multiple client with unique client ids
-var globalTimer Timer
+type SyncTimeMap struct {
+	sync.RWMutex
+	timeMap map[string]int64 // timerID: startTime
+}
+
+func (t *SyncTimeMap) Store(timerID string, startTime int64) {
+	t.Lock()
+	defer t.Unlock()
+	t.timeMap[timerID] = startTime
+}
+
+func (t *SyncTimeMap) Load(timerID string) (int64, bool) {
+	t.RLock()
+	defer t.RUnlock()
+	startTime, ok := t.timeMap[timerID]
+	return startTime, ok
+}
+
+func (t *SyncTimeMap) Delete(timerID string) {
+	t.Lock()
+	defer t.Unlock()
+	delete(t.timeMap, timerID)
+}
+
+var globalTimers SyncTimeMap
+
+func init() {
+	globalTimers.timeMap = make(map[string]int64)
+}
 
 type Page struct {
 	Home    bool
@@ -82,19 +109,32 @@ func GetTimer(w http.ResponseWriter, r *http.Request) {
 
 	switch action {
 	case "start":
-		globalTimer = Timer{
-			StartTime: time.Now().UnixMilli(),
-		}
+		timerID := utils.RandHash(8)
+		startTime := time.Now().UnixMilli()
+
+		globalTimers.Store(timerID, startTime)
+
 		response = TimerResponse{
-			StartTime: globalTimer.StartTime,
+			TimerID: timerID,
+			StartTime: startTime,
 		}
 	case "stop":
-		stopTime := time.Now().UnixMilli()
-		globalTimer.StopTime = &stopTime
-		response = TimerResponse{
-			StartTime: globalTimer.StartTime,
-			StopTime:  globalTimer.StopTime,
+		timerID := r.URL.Query().Get("tid")
+
+		startTime, ok := globalTimers.Load(timerID)
+		if !ok {
+			log.Fatal("timer with id " + timerID + " does not exists")
 		}
+
+		stopTime := time.Now().UnixMilli()
+
+		response = TimerResponse{
+			TimerID: timerID,
+			StartTime: startTime,
+			StopTime:  &stopTime,
+		}
+
+		globalTimers.Delete(timerID)
 	default:
 		w.WriteHeader(http.StatusBadRequest)
 		return
