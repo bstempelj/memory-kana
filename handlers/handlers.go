@@ -53,6 +53,11 @@ func GetGame(templateFS embed.FS, db *sql.DB) http.HandlerFunc {
 
 		kana := r.URL.Query().Get("kana")
 
+		if kana == "" {
+			http.Redirect(w, r, "/", http.StatusFound)
+			return
+		}
+
 		page := Page{
 			Scripts:   true,
 			Kana:kana,
