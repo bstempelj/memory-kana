@@ -15,9 +15,11 @@ import (
 type Page struct {
 	Home    bool
 	Scripts bool
+
 	// todo: define template type with time=string
 	Scoreboard []storage.PlayerTime
 	CSRFToken  string
+	Kana string
 
 	// tmp
 	Name string
@@ -49,8 +51,11 @@ func GetGame(templateFS embed.FS, db *sql.DB) http.HandlerFunc {
 			"templates/game.html",
 		))
 
+		kana := r.URL.Query().Get("kana")
+
 		page := Page{
 			Scripts:   true,
+			Kana:kana,
 			CSRFToken: csrf.Token(r),
 		}
 

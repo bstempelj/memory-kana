@@ -1,5 +1,5 @@
 class MemoryKana {
-	constructor(csrfToken) {
+	constructor(kana, csrfToken) {
 		this.csrfToken = csrfToken;
 
 		// grid and content
@@ -20,12 +20,23 @@ class MemoryKana {
 		this.maxScore = 12;
 
 		// initialize game
-		this.init(this.hiragana);
+		this.init(kana);
 	}
 
 	init(kana) {
 		this.createTiles();
-		this.populateTiles(kana);
+
+		switch (kana) {
+		case "hiragana":
+			this.populateTiles(this.hiragana);
+			break;
+		case "katakana":
+			this.populateTiles(this.katakana);
+			break;
+		default:
+			throw new Error("invalid kana");
+		}
+
 		this.timerStarted = false;
 		this.initClickEvents();
 	}
@@ -188,7 +199,7 @@ class MemoryKana {
 		"サ": "sa", "シ": "shi", "ス": "su", "セ": "se", "ソ": "so",
 		"タ": "ta", "チ": "chi", "ツ": "tsu", "テ": "te", "ト": "to",
 		"ナ": "na", "ニ": "ni", "ヌ": "nu", "ネ": "ne", "ノ": "no",
-		"ハ": "ha", "ヒ": "hi", "フ": "hu", "ヘ": "he", "ホ": "ho",
+		"ハ": "ha", "ヒ": "hi", "フ": "fu", "ヘ": "he", "ホ": "ho",
 		"マ": "ma", "ミ": "mi", "ム": "mu", "メ": "me", "モ": "mo",
 		"ヤ": "ya", "ユ": "yu", "ヨ": "yo",
 		"ラ": "ra", "リ": "ri", "ル": "ru", "レ": "re", "ロ": "ro",

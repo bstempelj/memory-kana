@@ -9,7 +9,8 @@
 <script src="assets/game.js" defer></script>
 <script>
 	document.addEventListener("DOMContentLoaded", () => {
-		const mk = new MemoryKana("{{ .CSRFToken }}");
+		const kana = "{{ .Kana }}"
+		const mk = new MemoryKana(kana, "{{ .CSRFToken }}");
 	});
 </script>
 {{ end }}
