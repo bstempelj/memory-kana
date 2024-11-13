@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  packages: write
 
 jobs:
   lint:
@@ -56,4 +57,6 @@ jobs:
         with:
           push: ${{ github.ref_type == 'tag' }}
           tags: |
-            ghcr.io/${{ github.repository }}/memory-kana:${{ github.ref_name }}
+            ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/bstempelj/memory-kana

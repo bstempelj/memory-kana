@@ -11,6 +11,8 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o memory-kana
 
 FROM gcr.io/distroless/base-debian12 AS release-stage
 
+LABEL org.opencontainers.image.source=https://github.com/bstempelj/memory-kana
+
 WORKDIR /
 
 COPY --from=build-stage /app /
