@@ -116,7 +116,11 @@ func GetScoreboard(templateFS embed.FS, db *sql.DB) http.HandlerFunc {
 
 func PostScoreboard(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		r.ParseForm()
+		err := r.ParseForm()
+		if err != nil {
+			// TODO: redirect to error page
+			log.Fatal(err)
+		}
 
 		playerTime, err := time.Parse("04:05", r.FormValue("player-time"))
 		if err != nil {
