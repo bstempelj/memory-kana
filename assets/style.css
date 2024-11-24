@@ -66,6 +66,7 @@ main {
 menu {
     padding: 0;
     list-style: none;
+    width: 500px;
 
     li {
         background-color: white;
@@ -78,7 +79,6 @@ menu {
             cursor: pointer;
             text-align: center;
             user-select: none;
-            min-width: 500px;
             display: block;
             padding: 10px;
             text-decoration: none;
@@ -163,6 +163,46 @@ h2 {
         &.clicked, &.show {
             visibility: visible;
         }
+    }
+}
+
+@media only screen and (max-width: 600px) {
+    header {
+        &:not(.menu) {
+            display: inline;
+        }
+    }
+
+    h1 {
+        font-size: 3em;
+    }
+
+    h2 {
+        text-align: center;
+        font-size: 2em;
+    }
+
+    nav {
+        display: none;
+    }
+
+    menu {
+        width: 300px;
+    }
+
+    menu li a {
+        font-size: 1.75em;
+    }
+
+    .mk-grid {
+        grid-template-columns: repeat(4, minmax(auto, 80px));
+        grid-template-rows: repeat(6, minmax(auto, 80px));
+        grid-gap: 10px;
+    }
+
+    .mk-timer {
+        margin-top: 0;
+        font-size: 3em;
     }
 }
 
