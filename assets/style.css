@@ -1,3 +1,17 @@
+/* variables */
+:root {
+    --background-color: #383d43;
+    --text-color: white;
+
+    --header-font-size: 2rem;
+    --footer-font-size: 1rem;
+
+    --menu-item-font-size: 1.5rem;
+    --menu-item-padding: 15px;
+    --menu-item-margin: 30px;
+}
+
+
 /* CSS reset */
 *, *::before, *::after {
     box-sizing: border-box;
@@ -31,13 +45,12 @@ p, h1, h2, h3, h4, h5, h6 {
 
 /* game styles */
 body {
-    background-color: #383d43;
+    background-color: var(--background-color);
     display: flex;
     flex-direction: column;
-    align-items: center;
     font-family: sans-serif;
-    color: white;
-    height: 100vh;
+    color: var(--text-color);
+    min-height: 100dvh;
 }
 
 nav ul {
@@ -45,7 +58,7 @@ nav ul {
     list-style: none;
     display: flex;
     margin-left: 10px;
-    font-size: 1.5em;
+    font-size: 1rem;
 
     li {
         padding-left: 20px;
@@ -61,29 +74,30 @@ main {
     display: flex;
     flex-direction: column;
     justify-content: center;
+    margin-inline: auto;
 }
 
 menu {
     padding: 0;
     list-style: none;
-    width: 500px;
+    width: calc(100vw - 10px);
 
     li {
         background-color: white;
         border-radius: 10px;
         border: 3px solid #9c5528;
         display: block;
-        margin-bottom: 50px;
+        margin: var(--menu-item-margin);
 
         a {
             cursor: pointer;
             text-align: center;
             user-select: none;
             display: block;
-            padding: 10px;
+            padding: var(--menu-item-padding);
             text-decoration: none;
             color: black;
-            font-size: 2em;
+            font-size: var(--menu-item-font-size);
         }
     }
 }
@@ -107,36 +121,39 @@ footer {
     background-color: #4F565F;
     width: 100vw;
     text-align: center;
-    padding: 10px 0;
+    padding: 3px 0;
 }
 
 h1 {
     text-align: center;
-    font-size: 4em;
+    font-size: var(--header-font-size);
 }
 
 h2 {
     text-align: left;
     padding-left: 10px;
-    font-size: 1.5em;
+    font-size: 1rem;
+}
+
+.mk-game {
+    margin-inline: auto;
 }
 
 .mk-timer {
-    margin-top: 80px;
+    margin-top: 33px;
     text-align: center;
-    font-size: 3.5em;
+    font-size: 1.5rem;
     user-select: none;
-}
-
-.mk-wrap {
-    display: flex;
 }
 
 .mk-grid {
     display: grid;
-    grid-template-columns: repeat(6, 80px);
-    grid-template-rows: repeat(4, 80px);
-    grid-gap: 50px;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(6, 1fr);
+    gap: 10px;
+
+    width: 250px;
+    height: calc(250px * 1.5);
 
     padding: 0;
     list-style: none;
@@ -148,15 +165,14 @@ h2 {
         cursor: pointer;
         text-align: center;
         user-select: none;
+        position: relative;
     }
 
     span {
         display: inline-block;
         cursor: pointer;
-        font-size: 2.5em;
-        line-height: 1.85;
-        width: 100%;
-        height: 100%;
+        font-size: 1.5rem;
+        line-height: calc(250px * 1.5 / 6 - 10px);
         visibility: hidden;
         color: black;
 
@@ -166,49 +182,9 @@ h2 {
     }
 }
 
-@media only screen and (max-width: 600px) {
-    header {
-        &:not(.menu) {
-            display: inline;
-        }
-    }
-
-    h1 {
-        font-size: 3em;
-    }
-
-    h2 {
-        text-align: center;
-        font-size: 2em;
-    }
-
-    nav {
-        display: none;
-    }
-
-    menu {
-        width: 300px;
-    }
-
-    menu li a {
-        font-size: 1.75em;
-    }
-
-    .mk-grid {
-        grid-template-columns: repeat(4, minmax(auto, 80px));
-        grid-template-rows: repeat(6, minmax(auto, 80px));
-        grid-gap: 10px;
-    }
-
-    .mk-timer {
-        margin-top: 0;
-        font-size: 3em;
-    }
-}
-
 .mk-scoreboard {
     border-collapse: collapse;
-    font-size: 1.2em;
+    font-size: 1rem;
     text-align: center;
 
     th, td {
@@ -222,8 +198,33 @@ h2 {
 
 .mk-game-info-box {
     margin: 20px 0;
-    font-size: 1.1rem;
+    font-size: 1rem;
     background: #576d6d;
     border-radius: 10px;
     padding: 15px;
+}
+
+@media only screen and (min-width: 600px) {
+    menu {
+        width: 500px;
+    }
+
+    .mk-grid {
+        grid-template-columns: repeat(6, 1fr);
+        grid-template-rows: repeat(4, 1fr);
+        gap: 20px;
+
+        width: calc(450px * 1.5);
+        height: 450px;
+
+        li span {
+            font-size: 2rem;
+            line-height: calc(450px / 4 - 20px);
+        }
+    }
+
+    .mk-timer {
+        margin-top: 50px;
+        font-size: 2rem;
+    }
 }
