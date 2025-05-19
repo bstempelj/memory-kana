@@ -19,7 +19,7 @@ docker/tag/%: ## Tag the built docker image
 docker/push/%: ## Push the tagged docker image to docker hub
 	@docker image push blazstempelj/memory-kana:$*
 
-.PHONY: dev dev/down prod prod/down
+.PHONY: dev dev/down prod prod/down clean
 dev: ## Run compose with dev profile
 	@docker compose --profile dev up -d
 
@@ -31,3 +31,6 @@ prod: ## Run compose with prod profile
 
 prod/down: ## Stop compose with prod profilel
 	@docker compose --profile prod down
+
+clean: ## Remove database volume
+	@docker volume rm memory-kana_pg_data
