@@ -56,7 +56,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           push: ${{ github.ref_type == 'tag' }}
-          tags: |
+          tags: |-
             ghcr.io/${{ github.repository }}:${{ github.ref_name }}
-          labels: |
+          labels: |-
             org.opencontainers.image.source=https://github.com/bstempelj/memory-kana
