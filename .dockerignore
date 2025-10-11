@@ -1,0 +1,10 @@
+.git
+.github
+.envrc
+.envrc.example
+.gitignore
+LICENSE
+Makefile
+README.dm
+compose.yml
+howitlooks.png
