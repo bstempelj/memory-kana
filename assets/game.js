@@ -19,11 +19,10 @@ class MemoryKana {
 		this.score = 0;
 		this.maxScore = 12;
 
-		// initialize game
-		this.init(kana);
+		this.initGame(kana);
 	}
 
-	init(kana) {
+	initGame(kana) {
 		this.createTiles();
 
 		switch (kana) {
