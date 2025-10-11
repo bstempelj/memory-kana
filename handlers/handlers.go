@@ -16,14 +16,13 @@ type Page struct {
 	Home    bool
 	Scripts bool
 
-	// todo: define template type with time=string
-	Scoreboard []storage.PlayerTime
+	Scoreboard []storage.PlayerDuration
 	CSRFToken  string
 	Kana string
 
 	// tmp
 	Name string
-	Time time.Time
+	Duration time.Duration
 	Rank uint
 }
 
@@ -75,8 +74,10 @@ func GetScoreboard(templateFS embed.FS, db *sql.DB) http.HandlerFunc {
 		player := r.URL.Query().Get("p")
 
 		funcMap := template.FuncMap{
-			"formatTime": func(t time.Time) string {
-				return fmt.Sprintf("%02d:%02d", t.Minute(), t.Second())
+			"formatDuration": func(t time.Duration) string {
+				minutes := int(t.Minutes()) % 60
+				seconds := int(t.Seconds()) % 60
+				return fmt.Sprintf("%02d:%02d", minutes, seconds)
 			},
 		}
 
@@ -90,7 +91,7 @@ func GetScoreboard(templateFS embed.FS, db *sql.DB) http.HandlerFunc {
 			log.Fatal(err)
 		}
 
-		scoreboard, err := storage.SelectPlayerTimes(db)
+		scoreboard, err := storage.SelectPlayerDurationList(db)
 		if err != nil {
 			// TODO: redirect to error page
 			log.Fatal(err)
@@ -101,15 +102,15 @@ func GetScoreboard(templateFS embed.FS, db *sql.DB) http.HandlerFunc {
 		}
 
 		if player != "" {
-			playerTime, playerRank, err := storage.SelectPlayerTimeRank(db, player)
+			duration, rank, err := storage.SelectPlayerDurationAndRank(db, player)
 			if err != nil {
 				// TODO: redirect to error page
 				log.Fatal(err)
 			}
 
 			page.Name = player
-			page.Time = playerTime
-			page.Rank = playerRank
+			page.Duration = duration
+			page.Rank = rank
 		}
 
 		if err := t.Execute(w, page); err != nil {
