@@ -1,6 +1,8 @@
 class MemoryKana {
-	constructor(kana, csrfToken) {
+	constructor(kana, csrfToken, useWebSocket) {
+		this.kana = kana;
 		this.csrfToken = csrfToken;
+		this.useWebSocket = useWebSocket;
 
 		// grid and content
 		this.grid = document.querySelector(".mk-grid");
@@ -21,7 +23,11 @@ class MemoryKana {
 		// score
 		this.score = 0;
 		this.maxScore = 12;
+		this.gameOver = false;
 
+		if (this.useWebSocket) {
+			this.initWebSocket();
+		}
 		this.initGame(kana);
 	}
 
@@ -37,6 +43,31 @@ class MemoryKana {
 		this.populateTiles(this.kana);
 		this.timerStarted = false;
 		this.tiles.forEach(tile => (new Tile(tile)).enableClick(this.handleTileClick.bind(this)));
+	}
+
+	initWebSocket() {
+		this.socket = new WebSocket(`ws://${location.host}/game/ws`);
+
+		this.socket.onopen = () => {
+			console.log("websocket connected");
+		};
+
+		this.socket.onclose = (event) => {
+			console.log("websocket closed:", event);
+			// TODO: show error if closed before gameover message received
+		};
+
+		this.socket.onerror = (error) => {
+			console.error("websocket error:", error);
+		};
+
+		this.socket.onmessage = (event) => {
+			console.log("websocket message:", event);
+
+			const message = JSON.parse(event.data);
+			// TODO: check if message contains redirect as data
+			window.location.href = message.data.redirect;
+		};
 	}
 
 	startTimer() {
@@ -65,6 +96,15 @@ class MemoryKana {
 	handleTileClick(tile) {
 		// init timer on first click
 		if (!this.timerStarted) {
+			if (this.useWebSocket) {
+				const message = {
+					type: "start",
+					data: {
+						timestamp: Math.floor(Date.now() / 1000),
+					},
+				};
+				this.socket.send(JSON.stringify(message));
+			}
 			this.startTimer();
 		}
 
@@ -84,6 +124,30 @@ class MemoryKana {
 			// permanently show
 			this.clicked.addClass("show");
 			this.clicked.disableClick();
+
+			let kana, romaji;
+			if (tile.type == "kana") {
+				kana = tile.text;
+				romaji = tile.pair;
+			} else {
+				romaji = tile.text;
+				kana = tile.pair;
+			}
+
+			if (this.useWebSocket) {
+				// send pair over websocket
+				const message = {
+					type: "pair",
+					data: {
+						// TODO: make sure the dataset matches kana and romaji
+						// on the backend!!
+						kana: kana,
+						romaji: romaji,
+						timestamp: Math.floor(Date.now() / 1000),
+					},
+				};
+				this.socket.send(JSON.stringify(message));
+			}
 
 			tile.addClass("show");
 			tile.disableClick();
@@ -107,28 +171,39 @@ class MemoryKana {
 			clearInterval(this.timerHandle);
 
 			const elapsedTime = this.timer.innerHTML;
+			console.log(`elapsed time: ${elapsedTime}`);
 
-			// create form dinamically and submit
-			// reason: make redirect from Go work automatically
-			{
-				const form = document.createElement("form");
-				form.style.display = "none";
-				form.method = "POST";
-				form.action = "/scoreboard";
+			if (this.useWebSocket) {
+				const message = {
+					type: "end",
+					data: {
+						timestamp: Math.floor(Date.now() / 1000),
+					},
+				};
+				this.socket.send(JSON.stringify(message));
+			} else {
+				// create form dinamically and submit
+				// reason: make redirect from Go work automatically
+				{
+					const form = document.createElement("form");
+					form.style.display = "none";
+					form.method = "POST";
+					form.action = "/scoreboard";
 
-				const playerTimeInput = document.createElement("input");
-				playerTimeInput.name = "player-time";
-				playerTimeInput.value = elapsedTime;
-				form.appendChild(playerTimeInput);
-				document.body.appendChild(form);
+					const playerTimeInput = document.createElement("input");
+					playerTimeInput.name = "player-time";
+					playerTimeInput.value = elapsedTime;
+					form.appendChild(playerTimeInput);
+					document.body.appendChild(form);
 
-				const csrfInput = document.createElement("input");
-				csrfInput.name = "gorilla.csrf.Token";
-				csrfInput.value = this.csrfToken;
-				form.appendChild(csrfInput);
-				document.body.appendChild(form);
+					const csrfInput = document.createElement("input");
+					csrfInput.name = "gorilla.csrf.Token";
+					csrfInput.value = this.csrfToken;
+					form.appendChild(csrfInput);
+					document.body.appendChild(form);
 
-				form.submit();
+					form.submit();
+				}
 			}
 		}
 	}
@@ -214,6 +289,7 @@ class MemoryKana {
 class Tile {
 	constructor(element) {
 		this.element = element;
+		this.text = this.element.children[0].innerHTML;
 		this.pair = this.element.children[0].dataset.pair;
 		this.type = this.element.children[0].dataset.type;
 	}

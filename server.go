@@ -23,7 +23,17 @@ var templates embed.FS
 
 func main() {
 	migrateOnly := flag.Bool("migrate-only", false, "run only migrations without starting the server")
+	useWebSocket := flag.Bool("use-websocket", false, "switch to using websocket")
 	flag.Parse()
+
+	var level slog.Level
+	if logLevel, ok := os.LookupEnv("LOG_LEVEL"); ok {
+		if err := level.UnmarshalText([]byte(logLevel)); err != nil {
+			slog.Error("invalid LOG_LEVEL", "value", logLevel, "err", err)
+			os.Exit(1)
+		}
+	}
+	slog.SetLogLoggerLevel(level)
 
 	db, err := storage.Connect()
 	if err != nil {
@@ -43,9 +53,13 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", handlers.GetMenu(templates, db))
-	mux.HandleFunc("GET /game", handlers.GetGame(templates, db))
+	mux.HandleFunc("GET /game", handlers.GetGame(templates, db, useWebSocket))
+	if *useWebSocket {
+		mux.Handle("GET /game/ws", handlers.NewWebSocketHandler(db))
+	} else {
+		mux.HandleFunc("POST /scoreboard", handlers.PostScoreboard(db))
+	}
 	mux.HandleFunc("GET /scoreboard", handlers.GetScoreboard(templates, db))
-	mux.HandleFunc("POST /scoreboard", handlers.PostScoreboard(db))
 	mux.Handle("GET /assets/", http.FileServer(http.FS(assets)))
 
 	port := 1234

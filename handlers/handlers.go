@@ -17,9 +17,10 @@ type Page struct {
 	Home    bool
 	Scripts bool
 
-	Scoreboard []storage.PlayerDuration
-	CSRFToken  string
-	Kana       string
+	Scoreboard   []storage.PlayerDuration
+	CSRFToken    string
+	Kana         string
+	UseWebSocket bool
 
 	// tmp
 	Name     string
@@ -44,7 +45,7 @@ func GetMenu(templateFS embed.FS, db *sql.DB) http.HandlerFunc {
 	}
 }
 
-func GetGame(templateFS embed.FS, db *sql.DB) http.HandlerFunc {
+func GetGame(templateFS embed.FS, db *sql.DB, useWebSocket *bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		t := template.Must(template.ParseFS(
 			templateFS,
@@ -60,9 +61,10 @@ func GetGame(templateFS embed.FS, db *sql.DB) http.HandlerFunc {
 		}
 
 		page := Page{
-			Scripts:   true,
-			Kana:      kana,
-			CSRFToken: csrf.Token(r),
+			Scripts:      true,
+			Kana:         kana,
+			CSRFToken:    csrf.Token(r),
+			UseWebSocket: *useWebSocket,
 		}
 
 		if err := t.Execute(w, page); err != nil {

@@ -10,7 +10,10 @@
 <script>
 	document.addEventListener("DOMContentLoaded", () => {
 		const kana = "{{ .Kana }}"
-		const mk = new MemoryKana(kana, "{{ .CSRFToken }}");
+		const csrfToken = "{{ .CSRFToken }}"
+		const useWebSocket = {{ .UseWebSocket }}
+
+		const mk = new MemoryKana(kana, csrfToken, useWebSocket);
 	});
 </script>
 {{ end }}
