@@ -1,4 +1,5 @@
-FROM golang:1.23.2 AS build-stage
+# Build stage
+FROM golang:1.25 AS build
 
 WORKDIR /app
 
@@ -9,13 +10,13 @@ COPY . .
 
 RUN CGO_ENABLED=0 GOOS=linux go build -o memory-kana
 
-FROM gcr.io/distroless/base-debian12 AS release-stage
+FROM gcr.io/distroless/base-debian12
 
 LABEL org.opencontainers.image.source=https://github.com/bstempelj/memory-kana
 
 WORKDIR /
 
-COPY --from=build-stage /app /
+COPY --from=build /app /
 
 EXPOSE 1234
 
