@@ -56,8 +56,8 @@ func convertPlayerTimesTableToPlayerDuration(tx *sql.Tx) error {
 	}
 
 	type playerTime struct {
-		id int
-		time time.Time
+		id       int
+		time     time.Time
 		duration time.Duration
 	}
 
@@ -82,7 +82,7 @@ func convertPlayerTimesTableToPlayerDuration(tx *sql.Tx) error {
 	utcYear := time.Unix(0, 0).UTC().Year()
 	for _, pt := range ptList {
 		// convert year to utc year
-		pt.time = pt.time.AddDate(utcYear - pt.time.Year(), 0, 0)
+		pt.time = pt.time.AddDate(utcYear-pt.time.Year(), 0, 0)
 		pt.duration = pt.time.Sub(time.Unix(0, 0).UTC())
 
 		_, err = tx.Exec(`
