@@ -66,8 +66,8 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", handlers.GetMenu(templates, db))
 	mux.HandleFunc("GET /game", handlers.GetGame(templates, db))
+	mux.Handle("GET /game/ws", handlers.NewWebSocketHandler(db))
 	mux.HandleFunc("GET /scoreboard", handlers.GetScoreboard(templates, db))
-	mux.HandleFunc("POST /scoreboard", handlers.PostScoreboard(db))
 	mux.Handle("GET /assets/", http.FileServer(http.FS(assets)))
 
 	port := 1234

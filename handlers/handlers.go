@@ -19,7 +19,7 @@ type Page struct {
 	// todo: define template type with time=string
 	Scoreboard []storage.PlayerTime
 	CSRFToken  string
-	Kana string
+	Kana       string
 
 	// tmp
 	Name string
@@ -60,7 +60,7 @@ func GetGame(templateFS embed.FS, db *sql.DB) http.HandlerFunc {
 
 		page := Page{
 			Scripts:   true,
-			Kana:kana,
+			Kana:      kana,
 			CSRFToken: csrf.Token(r),
 		}
 
@@ -116,29 +116,5 @@ func GetScoreboard(templateFS embed.FS, db *sql.DB) http.HandlerFunc {
 			// TODO: redirect to error page
 			log.Fatal(err)
 		}
-	}
-}
-
-func PostScoreboard(db *sql.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		err := r.ParseForm()
-		if err != nil {
-			// TODO: redirect to error page
-			log.Fatal(err)
-		}
-
-		playerTime, err := time.Parse("04:05", r.FormValue("player-time"))
-		if err != nil {
-			// TODO: redirect to error page
-			log.Fatal(err)
-		}
-
-		playerName, err := storage.InsertPlayerTime(db, playerTime)
-		if err != nil {
-			// TODO: redirect to error page
-			log.Fatal(err)
-		}
-
-		http.Redirect(w, r, "/scoreboard?p="+playerName, http.StatusSeeOther)
 	}
 }
