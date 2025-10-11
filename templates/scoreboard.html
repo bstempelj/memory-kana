@@ -3,7 +3,7 @@
 <h1>Top 10</h1>
 {{ if ne .Name "" }}
 <p class="mk-game-info-box">
-	Your generated name is <strong>{{ .Name }}</strong>, your time was <strong>{{ formatTime .Time }}</strong> and you ranked <strong>#{{ .Rank }}</strong>.
+	Your generated name is <strong>{{ .Name }}</strong>, your time was <strong>{{ formatDuration .Duration }}</strong> and you ranked <strong>#{{ .Rank }}</strong>.
 </p>
 {{ end }}
 <table class="mk-scoreboard">
@@ -18,7 +18,7 @@
 			{{ range .Scoreboard }}
 				<tr>
 					<td>{{ .Player }}</td>
-					<td>{{ formatTime .Time }}</td>
+					<td>{{ formatDuration .Duration }}</td>
 				</tr>
 			{{ end }}
 		{{ else }}
@@ -27,12 +27,12 @@
 				{{ if eq .Player $playerName }}
 				<tr style="background-color: green;">
 					<td>{{ .Player }}</td>
-					<td>{{ formatTime .Time }}</td>
+					<td>{{ formatDuration .Duration }}</td>
 				</tr>
 				{{ else }}
 				<tr>
 					<td>{{ .Player }}</td>
-					<td>{{ formatTime .Time }}</td>
+					<td>{{ formatDuration .Duration }}</td>
 				</tr>
 				{{ end }}
 			{{ end }}
