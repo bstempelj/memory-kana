@@ -129,7 +129,7 @@ func (self WebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			duration := end.Sub(start)
 			slog.Info("game over", "duration(seconds)", duration.Seconds())
 
-			playerName, err := storage.InsertPlayerTime(self.db, time.Unix(0, 0).Add(duration))
+			playerName, err := storage.InsertPlayerDuration(self.db, duration)
 			if err != nil {
 				// TODO: redirect to error page
 				log.Fatal(err)

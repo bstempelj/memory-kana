@@ -6,6 +6,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
 	CREATE TABLE IF NOT EXISTS "player_times" (
 		"id" SERIAL PRIMARY KEY,
 		"player" VARCHAR(50) NOT NULL,
-		"time" TIME NOT NULL
+		"time" TIME NOT NULL,
+		"duration" BIGINT NOT NULL
 	);
 EOSQL
