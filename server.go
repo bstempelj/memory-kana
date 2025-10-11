@@ -7,6 +7,9 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
+	"flag"
+	"database/sql"
 
 	"github.com/gorilla/csrf"
 
@@ -56,12 +59,98 @@ func init() {
 	storageCfg.Database = strings.TrimSpace(dbname)
 }
 
+// TODO: move migration code to storage/migration.go
+// TODO: use singular for all table names
+func runMigrations(db *sql.DB) error {
+	_, err := db.Exec(`
+		ALTER TABLE player_times
+		ADD COLUMN IF NOT EXISTS duration BIGINT
+	`)
+	if err != nil {
+		return err
+	}
+
+	res, err := db.Query(`
+		SELECT id, "time"
+		FROM player_times
+		WHERE duration IS NULL
+	`)
+	if err != nil {
+		return err
+	}
+	defer res.Close()
+
+	for res.Next() {
+		var (
+			ptID int
+			ptTime time.Time
+		)
+		err := res.Scan(&ptID, &ptTime)
+		if err != nil {
+			return err
+		}
+
+		// convert year to utc year
+		year := ptTime.Year()
+		utcYear := time.Unix(0, 0).UTC().Year()
+		ptTime = ptTime.AddDate(utcYear - year, 0, 0)
+
+		ptDuration := ptTime.Sub(time.Unix(0, 0).UTC())
+
+		_, err = db.Exec(`
+			UPDATE player_times
+			SET duration = $1
+			WHERE id = $2 AND "time" = $3`,
+			ptDuration, ptID, ptTime,
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	if err = res.Err(); err != nil {
+		return err
+	}
+
+	_, err = db.Exec(`
+		ALTER TABLE player_times
+		ALTER COLUMN duration SET NOT NULL
+	`)
+	if err != nil {
+		return err
+	}
+
+	_, err = db.Exec(`
+		ALTER TABLE player_times
+		DROP COLUMN "time"
+	`)
+	if err != nil {
+		return err
+	}
+
+	// TODO: rename table player_times to player_duration
+	return nil
+}
+
 func main() {
+	migrate := flag.Bool("migrate", false, "run migrations")
+	flag.Parse()
+
 	db, err := storage.Connect(storageCfg)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer db.Close()
+
+	if *migrate {
+		fmt.Print("Migrating database...")
+		if err := runMigrations(db); err != nil {
+			fmt.Println("NOK")
+			log.Fatal(err)
+		}
+		fmt.Println("OK")
+		return
+	}
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", handlers.GetMenu(templates, db))
