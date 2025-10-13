@@ -64,11 +64,13 @@ func main() {
 	}
 	defer db.Close()
 
+	// TODO: move migration code to storage/migration.go
+
 	// NOTE: add new column "duration" to the "player_times" table
 	{
 		_, err := db.Exec(`
 			ALTER TABLE player_times
-			ADD COLUMN IF NOT EXISTS duration BIGINT NOT NULL`)
+			ADD COLUMN IF NOT EXISTS duration BIGINT`)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -79,7 +81,7 @@ func main() {
 		res, err := db.Query(`
 			select id, "time"
 			from player_times
-			where duration = 0
+			where duration IS NULL
 		`)
 		if err != nil {
 			log.Fatal(err)
@@ -94,6 +96,7 @@ func main() {
 				log.Fatal(err)
 			}
 
+			// FIX: this is wrong!!!
 			ptDuration := ptTime.Sub(time.Unix(0, 0))
 
 			_, err = db.Exec(
@@ -106,6 +109,26 @@ func main() {
 		}
 
 		if err = res.Err(); err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	// NOTE: make the column not null for new values
+	{
+		_, err := db.Exec(`
+			ALTER TABLE player_times
+			ALTER COLUMN duration SET NOT NULL`)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	// NOTE: drop the old column
+	{
+		_, err := db.Exec(`
+			ALTER TABLE player_times
+			DROP COLUMN "time"`)
+		if err != nil {
 			log.Fatal(err)
 		}
 	}
