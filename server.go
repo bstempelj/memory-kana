@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/gorilla/csrf"
 
@@ -62,6 +63,52 @@ func main() {
 		log.Fatal(err)
 	}
 	defer db.Close()
+
+	// NOTE: add new column "duration" to the "player_times" table
+	{
+		_, err := db.Exec(`
+			ALTER TABLE player_times
+			ADD COLUMN IF NOT EXISTS duration BIGINT NOT NULL`)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	// NOTE: migrate data from time column to duration
+	{
+		res, err := db.Query(`
+			select id, "time"
+			from player_times
+			where duration = 0
+		`)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer res.Close()
+
+		for res.Next() {
+			var ptID int
+			var ptTime time.Time
+			err := res.Scan(&ptID, &ptTime)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			ptDuration := ptTime.Sub(time.Unix(0, 0))
+
+			_, err = db.Exec(
+				"UPDATE player_times SET duration = $1 WHERE id = $2 AND \"time\" = $3",
+				ptDuration, ptID, ptTime,
+			)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+
+		if err = res.Err(); err != nil {
+			log.Fatal(err)
+		}
+	}
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", handlers.GetMenu(templates, db))
