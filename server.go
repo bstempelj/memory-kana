@@ -8,6 +8,8 @@ import (
 	"os"
 	"strings"
 	"time"
+	"flag"
+	"database/sql"
 
 	"github.com/gorilla/csrf"
 
@@ -57,80 +59,76 @@ func init() {
 	storageCfg.Database = strings.TrimSpace(dbname)
 }
 
+// TODO: move migration code to storage/migration.go
+// TODO: use singular for all table names
+func runMigrations(db *sql.DB) {
+	_, err := db.Exec(`ALTER TABLE player_times
+		ADD COLUMN IF NOT EXISTS duration BIGINT`)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	res, err := db.Query(`select id, "time"
+		from player_times
+		where duration IS NULL`)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer res.Close()
+
+	for res.Next() {
+		var ptID int
+		var ptTime time.Time
+		err := res.Scan(&ptID, &ptTime)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// FIX: this is wrong!!!
+		ptDuration := ptTime.Sub(time.Unix(0, 0))
+
+		_, err = db.Exec(
+			"UPDATE player_times SET duration = $1 WHERE id = $2 AND \"time\" = $3",
+			ptDuration, ptID, ptTime,
+			)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	if err = res.Err(); err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = db.Exec(`
+		ALTER TABLE player_times
+		ALTER COLUMN duration SET NOT NULL`)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = db.Exec(`
+		ALTER TABLE player_times
+		DROP COLUMN "time"`)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// TODO: rename table player_times to player_duration
+}
+
 func main() {
+	migrate := flag.Bool("migrate", false, "run migrations")
+	flag.Parse()
+
 	db, err := storage.Connect(storageCfg)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer db.Close()
 
-	// TODO: move migration code to storage/migration.go
-
-	// NOTE: add new column "duration" to the "player_times" table
-	{
-		_, err := db.Exec(`
-			ALTER TABLE player_times
-			ADD COLUMN IF NOT EXISTS duration BIGINT`)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-
-	// NOTE: migrate data from time column to duration
-	{
-		res, err := db.Query(`
-			select id, "time"
-			from player_times
-			where duration IS NULL
-		`)
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer res.Close()
-
-		for res.Next() {
-			var ptID int
-			var ptTime time.Time
-			err := res.Scan(&ptID, &ptTime)
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			// FIX: this is wrong!!!
-			ptDuration := ptTime.Sub(time.Unix(0, 0))
-
-			_, err = db.Exec(
-				"UPDATE player_times SET duration = $1 WHERE id = $2 AND \"time\" = $3",
-				ptDuration, ptID, ptTime,
-			)
-			if err != nil {
-				log.Fatal(err)
-			}
-		}
-
-		if err = res.Err(); err != nil {
-			log.Fatal(err)
-		}
-	}
-
-	// NOTE: make the column not null for new values
-	{
-		_, err := db.Exec(`
-			ALTER TABLE player_times
-			ALTER COLUMN duration SET NOT NULL`)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-
-	// NOTE: drop the old column
-	{
-		_, err := db.Exec(`
-			ALTER TABLE player_times
-			DROP COLUMN "time"`)
-		if err != nil {
-			log.Fatal(err)
-		}
+	if *migrate {
+		runMigrations(db)
 	}
 
 	mux := http.NewServeMux()
