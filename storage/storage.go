@@ -55,8 +55,8 @@ func InsertPlayerDuration(db *sql.DB, duration time.Duration) (string, error) {
 	player := "guest-" + randHash(8)
 
 	_, err := db.Exec(
-		`insert into player_times(player, "time", duration) values ($1, $2, $3)`,
-		player, time.Time{}, duration.Nanoseconds())
+		`insert into player_times(player, duration) values ($1, $2)`,
+		player, duration.Nanoseconds())
 	if err != nil {
 		return "", err
 	}
