@@ -6,13 +6,10 @@ import (
 	"fmt"
 	_ "github.com/lib/pq"
 	"log/slog"
-	"math/rand"
 	"time"
+
+	"github.com/bstempelj/memory-kana/hash"
 )
-
-const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-
-var seededRand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 type PlayerDuration struct {
 	Player   string
@@ -48,16 +45,7 @@ func Connect() (*sql.DB, error) {
 }
 
 func InsertPlayerDuration(db *sql.DB, duration time.Duration) (string, error) {
-	randHash := func(length int) string {
-		b := make([]byte, length)
-		for i := range b {
-			b[i] = charset[seededRand.Intn(len(charset))]
-		}
-		return string(b)
-	}
-
-	player := "guest-" + randHash(8)
-
+	player := "guest-" + hash.Random(8)
 	_, err := db.Exec(
 		`insert into player_times(player, duration) values ($1, $2)`,
 		player, duration.Nanoseconds())
