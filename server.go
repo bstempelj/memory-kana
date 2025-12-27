@@ -10,11 +10,13 @@ import (
 	"time"
 	"flag"
 	"database/sql"
+	"math/rand/v2"
 
 	"github.com/gorilla/csrf"
 
 	"github.com/bstempelj/memory-kana/handlers"
 	"github.com/bstempelj/memory-kana/storage"
+	"github.com/bstempelj/memory-kana/hash"
 )
 
 //go:embed assets
@@ -117,8 +119,26 @@ func runMigrations(db *sql.DB) {
 	// TODO: rename table player_times to player_duration
 }
 
+func seedDatabase(db *sql.DB) error {
+	numRows := 10
+	for i := 0; i < numRows; i++ {
+		// between 10s and 90s
+		duration := time.Duration(rand.IntN(80) + 10) * time.Second
+		_, err := db.Exec(
+			"insert into player_times(player, time) values ($1, $2)",
+			"generated-" + hash.Random(8),
+			time.Unix(0, 0).UTC().Add(duration),
+		)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func main() {
-	migrate := flag.Bool("migrate", false, "run migrations")
+	seed := flag.Bool("seed-db", false, "seed database")
+	migrate := flag.Bool("migrate-db", false, "run migrations")
 	flag.Parse()
 
 	db, err := storage.Connect(storageCfg)
@@ -127,8 +147,18 @@ func main() {
 	}
 	defer db.Close()
 
+	if *seed {
+		fmt.Print("Seeding the database...")
+		if err := seedDatabase(db); err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println("OK")
+		return
+	}
+
 	if *migrate {
 		runMigrations(db)
+		return
 	}
 
 	mux := http.NewServeMux()
