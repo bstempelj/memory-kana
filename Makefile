@@ -32,5 +32,8 @@ prod: ## Run compose with prod profile
 prod/down: ## Stop compose with prod profilel
 	@docker compose --profile prod down
 
+db/dump: ## Dump all data from db
+	@docker compose exec -u postgres postgres pg_dump -U user -d memory-kana | tee dbdump_$$(date +%Y%m%d%H%M%S).sql
+
 clean: ## Remove database volume
 	@docker volume rm memory-kana_pg_data
