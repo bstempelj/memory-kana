@@ -134,7 +134,10 @@ func PostScoreboard(db *sql.DB) http.HandlerFunc {
 			log.Fatal(err)
 		}
 
-		playerName, err := storage.InsertPlayerTime(db, playerTime)
+		// remove 1 year since zero year is january 1, year 1
+		duration := playerTime.Sub((time.Time{}).AddDate(-1, 0, 0))
+
+		playerName, err := storage.InsertPlayerDuration(db, duration)
 		if err != nil {
 			// TODO: redirect to error page
 			log.Fatal(err)
