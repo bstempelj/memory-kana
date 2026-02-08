@@ -3,6 +3,7 @@ export COMPOSE_PROFILES=dev
 export HOST_ENV=dev
 export CSRF_AUTH_KEY=32-byte-long-auth-key
 
-export POSTGRES_USER=user
-export POSTGRES_PASSWORD=password
-export POSTGRES_DB=memory-kana
+export PGDATABASE=memory-kana
+export PGPASSWORD=password
+export PGSSLMODE=disable
+export PGUSER=user

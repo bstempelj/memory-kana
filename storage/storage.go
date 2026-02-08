@@ -3,10 +3,9 @@ package storage
 import (
 	"database/sql"
 	"errors"
-	"fmt"
-	_ "github.com/lib/pq"
 	"math/rand"
 	"time"
+	_ "github.com/lib/pq"
 )
 
 const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -18,20 +17,9 @@ type PlayerTime struct {
 	Time   time.Time
 }
 
-type Config struct {
-	Host     string
-	Port     string
-	User     string
-	Password string
-	Database string
-}
-
-func Connect(cfg Config) (*sql.DB, error) {
-	psqlInfo := fmt.Sprintf(
-		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		cfg.Host, cfg.Port, cfg.User, cfg.Password, cfg.Database)
-
-	db, err := sql.Open("postgres", psqlInfo)
+func Connect() (*sql.DB, error) {
+	// connection string info is read from pg env vars
+	db, err := sql.Open("postgres", "")
 	if err != nil {
 		return nil, err
 	}
