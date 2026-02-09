@@ -3,6 +3,7 @@ package storage
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"math/rand"
 	"time"
 	_ "github.com/lib/pq"
@@ -18,17 +19,27 @@ type PlayerTime struct {
 }
 
 func Connect() (*sql.DB, error) {
-	// connection string info is read from pg env vars
-	db, err := sql.Open("postgres", "")
-	if err != nil {
-		return nil, err
-	}
+	var db *sql.DB
+	var err error
 
-	err = db.Ping()
-	if err != nil {
-		return nil, err
+	retries := 20
+	delay := 1 * time.Second
+
+	for i := 0; i < retries; i++ {
+		// connection string info is read from pg env vars
+		db, err = sql.Open("postgres", "")
+		if err != nil {
+			return nil, fmt.Errorf("failed to open db: %w", err)
+		}
+
+		if err = db.Ping(); err == nil {
+			return db, nil
+		}
+
+		fmt.Println("db not ready yet, retrying...")
+		time.Sleep(delay)
 	}
-	return db, nil
+	return nil, errors.New("connection to db timeout out")
 }
 
 func InsertPlayerTime(db *sql.DB, playerTime time.Time) (string, error) {
