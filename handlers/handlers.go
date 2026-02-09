@@ -19,7 +19,7 @@ type Page struct {
 	// todo: define template type with time=string
 	Scoreboard []storage.PlayerTime
 	CSRFToken  string
-	Kana string
+	Kana       string
 
 	// tmp
 	Name string
@@ -60,7 +60,7 @@ func GetGame(templateFS embed.FS, db *sql.DB) http.HandlerFunc {
 
 		page := Page{
 			Scripts:   true,
-			Kana:kana,
+			Kana:      kana,
 			CSRFToken: csrf.Token(r),
 		}
 
