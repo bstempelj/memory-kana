@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log/slog"
 	"math/rand"
 	"time"
 	_ "github.com/lib/pq"
@@ -22,24 +23,28 @@ func Connect() (*sql.DB, error) {
 	var db *sql.DB
 	var err error
 
-	retries := 20
+	retries := 5
 	delay := 1 * time.Second
+
+	slog.Info("starting connection to postgres")
 
 	for i := 0; i < retries; i++ {
 		// connection string info is read from pg env vars
 		db, err = sql.Open("postgres", "")
 		if err != nil {
-			return nil, fmt.Errorf("failed to open db: %w", err)
+			return nil, fmt.Errorf("failed to open connection to postgres: %w", err)
 		}
 
 		if err = db.Ping(); err == nil {
+			slog.Info("connection to postgres successfull")
 			return db, nil
 		}
 
-		fmt.Println("db not ready yet, retrying...")
+		slog.Info(fmt.Sprintf("retrying after %ds...", delay / time.Second))
 		time.Sleep(delay)
+		delay *= 2
 	}
-	return nil, errors.New("connection to db timeout out")
+	return nil, errors.New("connection to postgres timeout out")
 }
 
 func InsertPlayerTime(db *sql.DB, playerTime time.Time) (string, error) {
