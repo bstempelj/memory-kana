@@ -19,6 +19,8 @@ type PlayerTime struct {
 	Time   time.Time
 }
 
+var ErrPostgresTimeout = errors.New("connection to postgres timed out")
+
 func Connect() (*sql.DB, error) {
 	var db *sql.DB
 	var err error
@@ -44,7 +46,7 @@ func Connect() (*sql.DB, error) {
 		time.Sleep(delay)
 		delay *= 2
 	}
-	return nil, errors.New("connection to postgres timeout out")
+	return nil, ErrPostgresTimeout
 }
 
 func InsertPlayerTime(db *sql.DB, playerTime time.Time) (string, error) {
