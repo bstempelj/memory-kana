@@ -18,6 +18,7 @@ services:
     profiles:
       - dev
       - prod
+      - test
 
   server:
     image: ghcr.io/bstempelj/memory-kana:0.3.0

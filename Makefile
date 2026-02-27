@@ -9,6 +9,11 @@ help: ## Display all Makefile commands
 fmt: ## Run gofmt recursively
 	@go fmt ./...
 
+.PHONY: test
+test: ## Run go test recursively
+	@PGDATABASE=test PGPASSWORD=password PGUSER=user docker compose --profile test up -d
+	@go test -v ./...
+
 .PHONY: docker/build docker/tag/% docker/push/%
 docker/build: ## Build a docker image
 	@docker build -t memory-kana .
