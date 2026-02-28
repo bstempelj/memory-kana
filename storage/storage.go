@@ -21,12 +21,11 @@ type PlayerTime struct {
 
 var ErrPostgresTimeout = errors.New("connection to postgres timed out")
 
-func Connect() (*sql.DB, error) {
+func Connect(retries int, baseBackoff time.Duration) (*sql.DB, error) {
 	var db *sql.DB
 	var err error
 
-	retries := 5
-	delay := 1 * time.Second
+	backoff := baseBackoff
 
 	slog.Info("starting connection to postgres")
 
@@ -42,9 +41,9 @@ func Connect() (*sql.DB, error) {
 			return db, nil
 		}
 
-		slog.Info(fmt.Sprintf("retrying after %ds...", delay / time.Second))
-		time.Sleep(delay)
-		delay *= 2
+		//slog.Info(fmt.Sprintf("retrying after %ds...", backoff / time.Second))
+		time.Sleep(backoff)
+		backoff *= 2
 	}
 	return nil, ErrPostgresTimeout
 }

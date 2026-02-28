@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/gorilla/csrf"
 
@@ -21,7 +22,10 @@ var assets embed.FS
 var templates embed.FS
 
 func main() {
-	db, err := storage.Connect()
+	retries := 5
+	baseBackoff := 1 * time.Second
+
+	db, err := storage.Connect(retries, baseBackoff)
 	if err != nil {
 		log.Fatal(err)
 	}

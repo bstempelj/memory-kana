@@ -3,11 +3,15 @@ package storage
 import (
 	"errors"
 	"testing"
+	"time"
 )
 
 func TestConnect(t *testing.T) {
+	retries := 3
+	baseBackoff := 1 * time.Millisecond
+
 	t.Run("no pgvars defined", func(t *testing.T) {
-		_, err := Connect()
+		_, err := Connect(retries, baseBackoff)
 		if !errors.Is(err, ErrPostgresTimeout) {
 			t.Fatalf("expected %v, got %v", ErrPostgresTimeout, err)
 		}
@@ -19,7 +23,7 @@ func TestConnect(t *testing.T) {
 		t.Setenv("PGSSLMODE", "disable")
 		t.Setenv("PGUSER", "user")
 
-		db, err := Connect()
+		db, err := Connect(retries, baseBackoff)
 		if err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
