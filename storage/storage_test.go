@@ -10,6 +10,12 @@ func TestConnect(t *testing.T) {
 	retries := 3
 	baseBackoff := 1 * time.Millisecond
 
+	// we have to unset env vars because direnv loads them on prompt
+	t.Setenv("PGDATABASE", "")
+	t.Setenv("PGPASSWORD", "")
+	t.Setenv("PGSSLMODE", "")
+	t.Setenv("PGUSER", "")
+
 	t.Run("no PG env vars defined", func(t *testing.T) {
 		_, err := Connect(retries, baseBackoff)
 		if !errors.Is(err, ErrPostgresTimeout) {

@@ -36,9 +36,12 @@ func Connect(retries int, baseBackoff time.Duration) (*sql.DB, error) {
 			return nil, fmt.Errorf("failed to open connection to postgres: %w", err)
 		}
 
-		if err = db.Ping(); err == nil {
+		err = db.Ping()
+		if err == nil {
 			slog.Info("connection to postgres successfull")
 			return db, nil
+		} else {
+			slog.Error(err.Error())
 		}
 
 		//slog.Info(fmt.Sprintf("retrying after %ds...", backoff / time.Second))

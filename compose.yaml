@@ -1,13 +1,41 @@
 services:
-  postgres:
+  test-database:
     image: postgres:18-alpine
-    container_name: postgres
+    ports:
+      - 127.0.0.1:5434:5432
+    environment:
+      - POSTGRES_DB=test
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_PORT=5434
+      - POSTGRES_USER=user
+    profiles:
+      - test
+
+  dev-database:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    ports:
+      - 127.0.0.1:5433:5432
+    shm_size: 128mb
+    volumes:
+      - dev_data:/var/lib/postgresql/data
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+    environment:
+      - POSTGRES_DB=dev
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_USER=user
+      - POSTGRES_PORT=5433
+    profiles:
+      - dev
+
+  database:
+    image: postgres:18-alpine
     restart: unless-stopped
     ports:
       - 127.0.0.1:5432:5432
     shm_size: 128mb
     volumes:
-      - pg_data:/var/lib/postgresql/data
+      - prod_data:/var/lib/postgresql/data
       - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
     environment:
       - POSTGRES_DB=$PGDATABASE
@@ -16,13 +44,10 @@ services:
     networks:
       - mk_network
     profiles:
-      - dev
       - prod
-      - test
 
   server:
     image: ghcr.io/bstempelj/memory-kana:0.3.0
-    container_name: memory-kana
     restart: unless-stopped
     ports:
       - 127.0.0.1:1234:1234
@@ -35,7 +60,7 @@ services:
       - PGSSLMODE=disable
       - PGUSER
     depends_on:
-      - postgres
+      - database
     networks:
       - mk_network
     profiles:
@@ -46,4 +71,5 @@ networks:
     driver: bridge
 
 volumes:
-  pg_data:
+  dev_data:
+  prod_data:

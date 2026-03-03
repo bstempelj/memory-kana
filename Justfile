@@ -8,7 +8,8 @@ fmt:
 
 # Run go test with verbose flag recursively
 test:
-	go test -v ./...
+	docker compose --profile test up -d
+	PGPORT=5434 go test -v ./...
 
 # Build the memory-kana docker image
 docker-build:
