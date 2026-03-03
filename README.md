@@ -7,7 +7,7 @@ Install
 - `docker`
 - `docker compose`
 - `direnv`
-- `make`
+- `just`
 - `go`
 
 Create an `.envrc` file by copying `.envrc.example`
@@ -27,7 +27,7 @@ direnv allow
 Install `postgres` build downloading its docker image with
 
 ```sh
-make dev
+just compose
 ```
 
 build the app and run it
