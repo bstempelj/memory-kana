@@ -7,3 +7,4 @@ export PGDATABASE=memory-kana
 export PGPASSWORD=password
 export PGSSLMODE=disable
 export PGUSER=user
+export PGPORT=5432
