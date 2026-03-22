@@ -21,9 +21,9 @@ type Page struct {
 	Kana       string
 
 	// tmp
-	Name string
+	Name     string
 	Duration time.Duration
-	Rank uint
+	Rank     uint
 }
 
 func GetMenu(templateFS embed.FS, db *sql.DB) http.HandlerFunc {
