@@ -27,6 +27,10 @@ func main() {
 	}
 	defer db.Close()
 
+	if err = storage.Migrate(db); err != nil {
+		log.Fatal(err)
+	}
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", handlers.GetMenu(templates, db))
 	mux.HandleFunc("GET /game", handlers.GetGame(templates, db))
