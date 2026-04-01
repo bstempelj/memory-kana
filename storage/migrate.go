@@ -4,14 +4,13 @@ import "database/sql"
 
 type Migration func(tx *sql.Tx) error
 
-// TODO: use singular for all table names
 func createMigrationTable(tx *sql.Tx) error {
-	_, err := tx.Exec(`CREATE TABLE IF NOT EXISTS migration (version int PRIMARY KEY)`)
+	_, err := tx.Exec("CREATE TABLE IF NOT EXISTS migration (version int PRIMARY KEY)")
 	if err != nil {
 		return err
 	}
 
-	_, err = tx.Exec(`INSERT INTO migration (version) VALUES (0)`)
+	_, err = tx.Exec("INSERT INTO migration (version) VALUES (0)")
 	if err != nil {
 		return err
 	}
@@ -29,6 +28,8 @@ func createPlayerTimesTable(tx *sql.Tx) error {
 	}
 	return nil
 }
+
+// TODO: use singular for all table names
 
 func Migrate(db *sql.DB) error {
 	migrations := []Migration{
