@@ -28,9 +28,11 @@ func Connect() (*sql.DB, error) {
 
 	slog.Info("starting connection to postgres")
 
+	// TODO: read password from env
+	dsn := "postgres://postgres:password@localhost:5432/memorykana?sslmode=disable"
+
 	for i := 0; i < retries; i++ {
-		// connection string info is read from pg env vars
-		db, err = sql.Open("postgres", "")
+		db, err = sql.Open("postgres", dsn)
 		if err != nil {
 			return nil, fmt.Errorf("failed to open connection to postgres: %w", err)
 		}
