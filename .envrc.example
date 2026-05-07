@@ -3,8 +3,4 @@ export COMPOSE_PROFILES=dev
 export HOST_ENV=dev
 export CSRF_AUTH_KEY=32-byte-long-auth-key
 
-export PGDATABASE=memory-kana
-export PGPASSWORD=password
-export PGSSLMODE=disable
-export PGUSER=user
-export PGPORT=5432
+export PG_SUPERUSER_PASSWORD=password
