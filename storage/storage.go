@@ -29,12 +29,9 @@ func Connect() (*sql.DB, error) {
 
 	slog.Info("starting connection to postgres")
 
-	dsn := fmt.Sprintf(
-		"postgres://postgres:%s@localhost:5432/memorykana?sslmode=disable",
-		os.Getenv("PG_SUPERUSER_PASSWORD"))
-
 	for i := 0; i < retries; i++ {
-		db, err = sql.Open("postgres", dsn)
+		// NOTE: PG vars used for connection config
+		db, err = sql.Open("postgres", "")
 		if err != nil {
 			return nil, fmt.Errorf("failed to open connection to postgres: %w", err)
 		}

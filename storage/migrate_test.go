@@ -12,11 +12,8 @@ import (
 func setupTestDB(t *testing.T) *sql.DB {
 	t.Helper()
 
-	dsn := fmt.Sprintf(
-		"postgres://postgres:%s@localhost:5432/memorykana?sslmode=disable",
-		os.Getenv("PG_SUPERUSER_PASSWORD"))
-
-	db, err := sql.Open("postgres", dsn)
+	// NOTE: PG vars used for connection config
+	db, err := sql.Open("postgres", "")
 	if err != nil {
 		t.Fatalf("failed to open test db: %v", err)
 	}
