@@ -48,25 +48,34 @@ func Test_CreatePlayerTimesTable(t *testing.T) {
 	rows, err := db.Query(`SELECT column_name
 		FROM information_schema.columns
 		WHERE table_name = 'player_times'
+		AND table_schema = current_schema()
 		ORDER BY column_name ASC`)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	defer rows.Close()
 
-	i := 0
-	expectedColumns := []string{"id", "player", "time"}
-
+	var got []string
 	for rows.Next() {
 		var c string
 		err := rows.Scan(&c)
 		if err != nil {
 			t.Fatalf("failed to read row: %v", err)
 		}
+		got = append(got, c)
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatalf("row iteration error: %v", err)
+	}
 
-		if c != expectedColumns[i] {
-			t.Errorf("expected column name %s, got %v", expectedColumns[i], c)
+	expected := []string{"id", "player", "time"}
+	if len(got) != len(expected) {
+		t.Errorf("expected %d columns, got %d: %v", len(expected), len(got), got)
+	}
+
+	for i := range expected {
+		if got[i] != expected[i] {
+			t.Errorf("column %d: expected %q, got %q", i, expected[i], got[i])
 		}
-		i++
 	}
 }
