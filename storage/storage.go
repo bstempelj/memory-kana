@@ -7,6 +7,7 @@ import (
 	_ "github.com/lib/pq"
 	"log/slog"
 	"math/rand"
+	"os"
 	"time"
 )
 
@@ -28,8 +29,9 @@ func Connect() (*sql.DB, error) {
 
 	slog.Info("starting connection to postgres")
 
-	// TODO: read password from env
-	dsn := "postgres://postgres:password@localhost:5432/memorykana?sslmode=disable"
+	dsn := fmt.Sprintf(
+		"postgres://postgres:%s@localhost:5432/memorykana?sslmode=disable",
+		os.Getenv("PG_SUPERUSER_PASSWORD"))
 
 	for i := 0; i < retries; i++ {
 		db, err = sql.Open("postgres", dsn)

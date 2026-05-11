@@ -2,6 +2,8 @@ package storage
 
 import (
 	"database/sql"
+	"fmt"
+	"os"
 	"testing"
 
 	_ "github.com/lib/pq"
@@ -10,8 +12,9 @@ import (
 func setupTestDB(t *testing.T) *sql.DB {
 	t.Helper()
 
-	// TODO: read password from env
-	dsn := "postgres://postgres:password@localhost:5432/memorykana?sslmode=disable"
+	dsn := fmt.Sprintf(
+		"postgres://postgres:%s@localhost:5432/memorykana?sslmode=disable",
+		os.Getenv("PG_SUPERUSER_PASSWORD"))
 
 	db, err := sql.Open("postgres", dsn)
 	if err != nil {
