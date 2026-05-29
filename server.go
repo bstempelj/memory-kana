@@ -2,6 +2,7 @@ package main
 
 import (
 	"embed"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -21,6 +22,9 @@ var assets embed.FS
 var templates embed.FS
 
 func main() {
+	migrateOnly := flag.Bool("migrate-only", false, "run only migrations without starting the server")
+	flag.Parse()
+
 	db, err := storage.Connect()
 	if err != nil {
 		log.Fatal(err)
@@ -29,6 +33,9 @@ func main() {
 
 	if err = storage.Migrate(db); err != nil {
 		log.Fatal(err)
+	}
+	if *migrateOnly {
+		os.Exit(0)
 	}
 
 	mux := http.NewServeMux()
