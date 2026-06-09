@@ -38,13 +38,13 @@ db-exec:
 # Dump database data (in pg_restore format)
 db-dump:
 	docker compose exec -u postgres postgres \
-	pg_dump --data-only --format=custom --username="$PGUSER" --dbname="$PGDATABASE" \
+	pg_dump --format=custom --username="$PGUSER" --dbname="$PGDATABASE" \
 	| tee "dbdump_$(date +%Y%m%d%H%M%S)" >/dev/null
 
 # Restore database data from a pg_restore formatted dump
 db-restore file:
 	docker compose exec -T -u postgres postgres \
-	pg_restore --data-only --username "$PGUSER" --dbname "$PGDATABASE" < {{file}}
+	pg_restore --username "$PGUSER" --dbname "$PGDATABASE" < {{file}}
 
 # Remove database volume
 clean: compose-down
