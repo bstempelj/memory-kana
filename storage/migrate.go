@@ -148,7 +148,11 @@ func Migrate(db *sql.DB) error {
 		if err != nil {
 			return err
 		}
-		defer tx.Rollback()
+		defer func() {
+			if err := tx.Rollback(); err != nil {
+				slog.Error("rollback failed", "err", err)
+			}
+		}()
 
 		// run migration
 		err = migrations[version](tx)
