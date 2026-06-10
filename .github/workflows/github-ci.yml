@@ -58,5 +58,6 @@ jobs:
           push: ${{ github.ref_type == 'tag' }}
           tags: |-
             ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+            ghcr.io/${{ github.repository }}:latest
           labels: |-
             org.opencontainers.image.source=https://github.com/bstempelj/memory-kana

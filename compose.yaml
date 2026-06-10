@@ -19,7 +19,7 @@ services:
       - prod
 
   server:
-    image: ghcr.io/bstempelj/memory-kana:0.4.0
+    image: ghcr.io/bstempelj/memory-kana:latest
     container_name: memory-kana
     restart: unless-stopped
     ports:
