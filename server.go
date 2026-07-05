@@ -59,11 +59,7 @@ func main() {
 	}
 	hostEnv = strings.TrimSpace(hostEnv)
 
-	csrfSecure := false
-	if hostEnv == "prod" || hostEnv == "production" {
-		csrfSecure = true
-	}
-
+	csrfSecure := hostEnv == "prod" || hostEnv == "production"
 	CSRF := csrf.Protect([]byte(csrfAuthKey), csrf.Secure(csrfSecure))
 
 	log.Printf("Listening on port %v", port)
