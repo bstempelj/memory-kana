@@ -6,6 +6,9 @@ class MemoryKana {
 		this.grid = document.querySelector(".mk-grid");
 		this.tiles;
 
+		// previously clicked tile
+		this.clicked = null;
+
 		// dialog
 		this.dialog = document.querySelector('#mk-dialog');
 		this.playerScore = document.querySelector('#player-score');
@@ -26,18 +29,14 @@ class MemoryKana {
 		this.createTiles();
 
 		switch (kana) {
-		case "hiragana":
-			this.populateTiles(this.hiragana);
-			break;
-		case "katakana":
-			this.populateTiles(this.katakana);
-			break;
-		default:
-			throw new Error("invalid kana");
+		case "hiragana": this.kana = this.hiragana; break;
+		case "katakana": this.kana = this.katakana; break;
+		default: throw new Error("invalid kana");
 		}
 
+		this.populateTiles(this.kana);
 		this.timerStarted = false;
-		this.initClickEvents();
+		this.tiles.forEach(tile => (new Tile(tile)).enableClick(this.handleTileClick.bind(this)));
 	}
 
 	startTimer() {
@@ -63,74 +62,76 @@ class MemoryKana {
 		}, 1000);
 	}
 
-	initClickEvents() {
-		let clicked = null;
-		this.tiles.forEach((item) => {
-			item.addEventListener('click', () => {
-				// init timer on first click
-				if (!this.timerStarted) {
-					this.startTimer();
-				}
+	handleTileClick(tile) {
+		// init timer on first click
+		if (!this.timerStarted) {
+			this.startTimer();
+		}
 
-				// get clicked span
-				let span = item.children[0];
-				span.classList.add("clicked");
+		// show kana/romaji
+		tile.addClass("clicked")
 
-				// clicked 2-times
-				if (clicked) {
-					// pair found
-					if (clicked.innerHTML == span.dataset.pair) {
-						// permanently show
-						clicked.classList.add("show");
-						span.classList.add("show");
+		if (!this.clicked) {
+			this.clicked = tile
+			return;
+		}
 
-						// increase score
-						this.score++;
-					}
+		const kanaPair = tile.type == "kana" && this.kana[this.clicked.pair] == tile.pair;
+		const romajiPair = tile.type == "romaji" && this.kana[tile.pair] == this.clicked.pair;
 
-					// game over with victory
-					if (this.score == this.maxScore) {
-						clearInterval(this.timerHandle);
+		// pair found!
+		if (kanaPair || romajiPair) {
+			// permanently show
+			this.clicked.addClass("show");
+			this.clicked.disableClick();
 
-						const elapsedTime = this.timer.innerHTML;
+			tile.addClass("show");
+			tile.disableClick();
 
-						// create form dinamically and submit
-						// reason: make redirect from Go work automatically
-						{
-							const form = document.createElement("form");
-							form.style.display = "none";
-							form.method = "POST";
-							form.action = "/scoreboard";
+			// increase score
+			this.score++;
+		} else {
+			// hide clicked items after 200ms
+			const prevTile = this.clicked;
+			setTimeout(() => {
+				prevTile.removeClass("clicked");
+				tile.removeClass("clicked");
+			}, 200);
+		}
 
-							const playerTimeInput = document.createElement("input");
-							playerTimeInput.name = "player-time";
-							playerTimeInput.value = elapsedTime;
-							form.appendChild(playerTimeInput);
-							document.body.appendChild(form);
+		// reset clicked
+		this.clicked = null;
 
-							const csrfInput = document.createElement("input");
-							csrfInput.name = "gorilla.csrf.Token";
-							csrfInput.value = this.csrfToken;
-							form.appendChild(csrfInput);
-							document.body.appendChild(form);
+		// game over with victory
+		if (this.score == this.maxScore) {
+			clearInterval(this.timerHandle);
 
-							form.submit();
-						}
-					}
+			const elapsedTime = this.timer.innerHTML;
 
-					// hide clicked items after 200ms
-					setTimeout(() => {
-						clicked.classList.remove("clicked");
-						span.classList.remove("clicked");
-						clicked = null;
-					}, 200);
-				} else {
-					// save clicked item
-					clicked = span;
-				}
-			});
-		});
-	};
+			// create form dinamically and submit
+			// reason: make redirect from Go work automatically
+			{
+				const form = document.createElement("form");
+				form.style.display = "none";
+				form.method = "POST";
+				form.action = "/scoreboard";
+
+				const playerTimeInput = document.createElement("input");
+				playerTimeInput.name = "player-time";
+				playerTimeInput.value = elapsedTime;
+				form.appendChild(playerTimeInput);
+				document.body.appendChild(form);
+
+				const csrfInput = document.createElement("input");
+				csrfInput.name = "gorilla.csrf.Token";
+				csrfInput.value = this.csrfToken;
+				form.appendChild(csrfInput);
+				document.body.appendChild(form);
+
+				form.submit();
+			}
+		}
+	}
 
 	createTiles() {
 		let numOfTiles = 24;
@@ -153,10 +154,13 @@ class MemoryKana {
 			while (this.checkDuplicate(prop)) {
 				prop = this.randomProperty(kanaType);
 			}
-			// add kana and romaji
+
 			kana.setAttribute("data-pair", kanaType[prop]);
+			kana.setAttribute("data-type", "kana");
 			kana.innerHTML = prop;
+
 			romaji.setAttribute("data-pair", prop);
+			romaji.setAttribute("data-type", "romaji");
 			romaji.innerHTML = kanaType[prop];
 		}
 	}
@@ -205,4 +209,28 @@ class MemoryKana {
 		"ワ": "wa", "ヲ": "wo",
 		"ン": "n"
 	};
+}
+
+class Tile {
+	constructor(element) {
+		this.element = element;
+		this.pair = this.element.children[0].dataset.pair;
+		this.type = this.element.children[0].dataset.type;
+	}
+
+	enableClick(handler) {
+		this.element.addEventListener('click', () => handler(this));
+	}
+
+	disableClick() {
+		this.element.removeEventListener('click', () => handler(this));
+	}
+
+	addClass(className) {
+		this.element.children[0].classList.add(className);
+	}
+
+	removeClass(className) {
+		this.element.children[0].classList.remove(className);
+	}
 }
