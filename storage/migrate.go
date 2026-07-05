@@ -68,14 +68,13 @@ func convertPlayerTimesTableToPlayerDuration(tx *sql.Tx) error {
 
 		err := rows.Scan(&pt.id, &pt.time)
 		if err != nil {
-			rows.Close()
+			closeRows(rows)
 			return err
 		}
 
 		ptList = append(ptList, pt)
 	}
 
-	rows.Close()
 	if err = rows.Err(); err != nil {
 		return err
 	}

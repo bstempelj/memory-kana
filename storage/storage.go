@@ -58,7 +58,7 @@ func InsertPlayerDuration(db *sql.DB, duration time.Duration) (string, error) {
 func SelectPlayerDurationList(db *sql.DB) ([]PlayerDuration, error) {
 	var playerDurationList []PlayerDuration
 
-	res, err := db.Query(`
+	rows, err := db.Query(`
 		select player, duration
 		from player_duration
 		order by duration
@@ -67,20 +67,20 @@ func SelectPlayerDurationList(db *sql.DB) ([]PlayerDuration, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer res.Close()
 
-	for res.Next() {
+	for rows.Next() {
 		var playerDuration PlayerDuration
 
-		err := res.Scan(&playerDuration.Player, &playerDuration.Duration)
+		err := rows.Scan(&playerDuration.Player, &playerDuration.Duration)
 		if err != nil {
+			closeRows(rows)
 			return nil, err
 		}
 
 		playerDurationList = append(playerDurationList, playerDuration)
 	}
 
-	if err = res.Err(); err != nil {
+	if err = rows.Err(); err != nil {
 		return nil, err
 	}
 	return playerDurationList, nil
