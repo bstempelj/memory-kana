@@ -29,7 +29,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer db.Close()
+	defer storage.CloseDB(db)
 
 	if err = storage.Migrate(db); err != nil {
 		log.Fatal(err)

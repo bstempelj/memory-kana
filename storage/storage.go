@@ -110,3 +110,15 @@ func SelectPlayerDurationAndRank(db *sql.DB, player string) (time.Duration, uint
 
 	return duration, rank, nil
 }
+
+func CloseDB(db *sql.DB) {
+	if err := db.Close(); err != nil {
+		slog.Error("close database", "err", err)
+	}
+}
+
+func closeRows(rows *sql.Rows) {
+	if err := rows.Close(); err != nil {
+		slog.Error("close query rows", "err", err)
+	}
+}
