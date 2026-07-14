@@ -4,7 +4,7 @@ import (
 	"embed"
 	"flag"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"strings"
@@ -27,14 +27,17 @@ func main() {
 
 	db, err := storage.Connect()
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("database connection", "err", err)
+		os.Exit(1)
 	}
 	defer storage.CloseDB(db)
 
 	if err = storage.Migrate(db); err != nil {
-		log.Fatal(err)
+		slog.Error("database migration", "err", err)
+		os.Exit(1)
 	}
 	if *migrateOnly {
+		slog.Info("database migration finished")
 		os.Exit(0)
 	}
 
@@ -49,19 +52,25 @@ func main() {
 
 	csrfAuthKey, ok := os.LookupEnv("CSRF_AUTH_KEY")
 	if !ok {
-		log.Fatal("missing CSRF_AUTH_KEY env var")
+		slog.Error("missing env var", "env", "CSRF_AUTH_KEY")
+		os.Exit(1)
 	}
 	csrfAuthKey = strings.TrimSpace(csrfAuthKey)
 
 	hostEnv, ok := os.LookupEnv("HOST_ENV")
 	if !ok {
-		log.Fatal("missing HOST_ENV env var")
+		slog.Error("missing env var", "env", "HOST_ENV")
+		os.Exit(1)
 	}
 	hostEnv = strings.TrimSpace(hostEnv)
 
 	csrfSecure := hostEnv == "prod" || hostEnv == "production"
 	CSRF := csrf.Protect([]byte(csrfAuthKey), csrf.Secure(csrfSecure))
 
-	log.Printf("Listening on port %v", port)
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%v", port), CSRF(mux)))
+	slog.Info("server starting", "port", port)
+	err = http.ListenAndServe(fmt.Sprintf(":%v", port), CSRF(mux))
+	if err != nil {
+		slog.Error("server failed", "err", err)
+		os.Exit(1)
+	}
 }
