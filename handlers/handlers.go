@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"github.com/bstempelj/memory-kana/storage"
 	"github.com/gorilla/csrf"
-	"log"
+	"log/slog"
 	"net/http"
+	"os"
 	"text/template"
 	"time"
 )
@@ -37,7 +38,8 @@ func GetMenu(templateFS embed.FS, db *sql.DB) http.HandlerFunc {
 		page := Page{Home: true}
 
 		if err := t.Execute(w, page); err != nil {
-			log.Fatal(err)
+			slog.Error("html template rendering", "page", "menu", "err", err)
+			os.Exit(1)
 		}
 	}
 }
@@ -64,7 +66,8 @@ func GetGame(templateFS embed.FS, db *sql.DB) http.HandlerFunc {
 		}
 
 		if err := t.Execute(w, page); err != nil {
-			log.Fatal(err)
+			slog.Error("html template rendering", "page", "game", "err", err)
+			os.Exit(1)
 		}
 	}
 }
@@ -88,13 +91,15 @@ func GetScoreboard(templateFS embed.FS, db *sql.DB) http.HandlerFunc {
 		)
 
 		if err != nil {
-			log.Fatal(err)
+			slog.Error("html template parsing", "page", "scoreboard", "err", err)
+			os.Exit(1)
 		}
 
 		scoreboard, err := storage.SelectPlayerDurationList(db)
 		if err != nil {
 			// TODO: redirect to error page
-			log.Fatal(err)
+			slog.Error("scoreboard retrieval", "page", "scoreboard", "err", err)
+			os.Exit(1)
 		}
 
 		page := Page{
@@ -105,7 +110,8 @@ func GetScoreboard(templateFS embed.FS, db *sql.DB) http.HandlerFunc {
 			duration, rank, err := storage.SelectPlayerDurationAndRank(db, player)
 			if err != nil {
 				// TODO: redirect to error page
-				log.Fatal(err)
+				slog.Error("player duration and rank retrieval", "page", "scoreboard", "err", err)
+				os.Exit(1)
 			}
 
 			page.Name = player
@@ -115,7 +121,8 @@ func GetScoreboard(templateFS embed.FS, db *sql.DB) http.HandlerFunc {
 
 		if err := t.Execute(w, page); err != nil {
 			// TODO: redirect to error page
-			log.Fatal(err)
+			slog.Error("html template rendering", "page", "scoreboard", "err", err)
+			os.Exit(1)
 		}
 	}
 }
@@ -125,13 +132,15 @@ func PostScoreboard(db *sql.DB) http.HandlerFunc {
 		err := r.ParseForm()
 		if err != nil {
 			// TODO: redirect to error page
-			log.Fatal(err)
+			slog.Error("html form parsing", "page", "scoreboard", "err", err)
+			os.Exit(1)
 		}
 
 		playerTime, err := time.Parse("04:05", r.FormValue("player-time"))
 		if err != nil {
 			// TODO: redirect to error page
-			log.Fatal(err)
+			slog.Error("player time parsing", "page", "scoreboard", "err", err)
+			os.Exit(1)
 		}
 
 		// remove 1 year since zero year is january 1, year 1
@@ -140,7 +149,8 @@ func PostScoreboard(db *sql.DB) http.HandlerFunc {
 		playerName, err := storage.InsertPlayerDuration(db, duration)
 		if err != nil {
 			// TODO: redirect to error page
-			log.Fatal(err)
+			slog.Error("player time insertion", "page", "scoreboard", "err", err)
+			os.Exit(1)
 		}
 
 		http.Redirect(w, r, "/scoreboard?p="+playerName, http.StatusSeeOther)
