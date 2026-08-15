@@ -46,7 +46,9 @@ class MemoryKana {
 	}
 
 	initWebSocket() {
-		this.socket = new WebSocket(`ws://${location.host}/game/ws`);
+		const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+		this.socket = new WebSocket(`${proto}//${location.host}/game/ws`);
+
 
 		this.socket.onopen = () => {
 			console.log("websocket connected");
