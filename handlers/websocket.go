@@ -5,12 +5,69 @@ import (
 	"encoding/json"
 	"errors"
 	"log/slog"
+	"math/rand/v2"
 	"net/http"
 	"time"
 
 	"github.com/bstempelj/memory-kana/storage"
 	"github.com/gorilla/websocket"
 )
+
+// var hiragana = map[string]string{
+// 	"あ": "a", "い": "i", "う": "u", "え": "e", "お": "o",
+// 	"か": "ka", "き": "ki", "く": "ku", "け": "ke", "こ": "ko",
+// 	"さ": "sa", "し": "shi", "す": "su", "せ": "se", "そ": "so",
+// 	"た": "ta", "ち": "chi", "つ": "tsu", "て": "te", "と": "to",
+// 	"な": "na", "に": "ni", "ぬ": "nu", "ね": "ne", "の": "no",
+// 	"は": "ha", "ひ": "hi", "ふ": "fu", "へ": "he", "ほ": "ho",
+// 	"ま": "ma", "み": "mi", "む": "mu", "め": "me", "も": "mo",
+// 	"や": "ya", "ゆ": "yu", "よ": "yo",
+// 	"ら": "ra", "り": "ri", "る": "ru", "れ": "re", "ろ": "ro",
+// 	"わ": "wa", "を": "wo",
+// 	"ん": "n"
+// }
+
+// var katakana = map[string]string{
+// 	"ア": "a", "イ": "i", "ウ": "u", "エ": "e", "オ": "o",
+// 	"カ": "ka", "キ": "ki", "ク": "ku", "ケ": "ke", "コ": "ko",
+// 	"サ": "sa", "シ": "shi", "ス": "su", "セ": "se", "ソ": "so",
+// 	"タ": "ta", "チ": "chi", "ツ": "tsu", "テ": "te", "ト": "to",
+// 	"ナ": "na", "ニ": "ni", "ヌ": "nu", "ネ": "ne", "ノ": "no",
+// 	"ハ": "ha", "ヒ": "hi", "フ": "fu", "ヘ": "he", "ホ": "ho",
+// 	"マ": "ma", "ミ": "mi", "ム": "mu", "メ": "me", "モ": "mo",
+// 	"ヤ": "ya", "ユ": "yu", "ヨ": "yo",
+// 	"ラ": "ra", "リ": "ri", "ル": "ru", "レ": "re", "ロ": "ro",
+// 	"ワ": "wa", "ヲ": "wo",
+// 	"ン": "n"
+// }
+
+var hiragana = [46]string{
+	"あ", "い", "う", "え", "お",
+	"か", "き", "く", "け", "こ",
+	"さ", "し", "す", "せ", "そ",
+	"た", "ち", "つ", "て", "と",
+	"な", "に", "ぬ", "ね", "の",
+	"は", "ひ", "ふ", "へ", "ほ",
+	"ま", "み", "む", "め", "も",
+	"や", "ゆ", "よ",
+	"ら", "り", "る", "れ", "ろ",
+	"わ", "を",
+	"ん",
+}
+
+var katakana = [46]string{
+	"ア", "イ", "ウ", "エ", "オ",
+	"カ", "キ", "ク", "ケ", "コ",
+	"サ", "シ", "ス", "セ", "ソ",
+	"タ", "チ", "ツ", "テ", "ト",
+	"ナ", "ニ", "ヌ", "ネ", "ノ",
+	"ハ", "ヒ", "フ", "ヘ", "ホ",
+	"マ", "ミ", "ム", "メ", "モ",
+	"ヤ", "ユ", "ヨ",
+	"ラ", "リ", "ル", "レ", "ロ",
+	"ワ", "ヲ",
+	"ン",
+}
 
 var ErrGameOver = errors.New("game over")
 
@@ -64,6 +121,11 @@ func (ws *WebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	slog.Debug("websocket connection upgraded")
+
+	kana := hiragana[:]
+	slog.Debug("original", "kana", kana)
+	fisherYatesShuffle(kana)
+	slog.Debug("shuffled", "kana", kana)
 
 	defer func() {
 		if err := conn.Close(); err != nil {
@@ -168,4 +230,11 @@ func handleGameMessage(game *Game, msg GameMessage) error {
 			"timestamp", pair.Timestamp)
 	}
 	return nil
+}
+
+func fisherYatesShuffle(kana []string) {
+	for i := len(kana) - 1; i >= 1; i-- {
+		j := rand.IntN(i + 1)
+		kana[i], kana[j] = kana[j], kana[i]
+	}
 }
