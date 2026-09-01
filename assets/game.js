@@ -95,17 +95,22 @@ class MemoryKana {
 		}, 1000);
 	}
 
+	sendMessage(type, data) {
+		const message = {
+			type: type,
+			data: {
+				...data,
+				timestamp: Math.floor(Date.now() / 1000),
+			},
+		};
+		this.socket.send(JSON.stringify(message));
+	}
+
 	handleTileClick(tile) {
 		// init timer on first click
 		if (!this.timerStarted) {
 			if (this.useWebSocket) {
-				const message = {
-					type: "start",
-					data: {
-						timestamp: Math.floor(Date.now() / 1000),
-					},
-				};
-				this.socket.send(JSON.stringify(message));
+				this.sendMessage("start")
 			}
 			this.startTimer();
 		}
@@ -137,18 +142,7 @@ class MemoryKana {
 			}
 
 			if (this.useWebSocket) {
-				// send pair over websocket
-				const message = {
-					type: "pair",
-					data: {
-						// TODO: make sure the dataset matches kana and romaji
-						// on the backend!!
-						kana: kana,
-						romaji: romaji,
-						timestamp: Math.floor(Date.now() / 1000),
-					},
-				};
-				this.socket.send(JSON.stringify(message));
+				this.sendMessage("pair", { kana, romaji })
 			}
 
 			tile.addClass("show");
@@ -176,13 +170,7 @@ class MemoryKana {
 			console.log(`elapsed time: ${elapsedTime}`);
 
 			if (this.useWebSocket) {
-				const message = {
-					type: "end",
-					data: {
-						timestamp: Math.floor(Date.now() / 1000),
-					},
-				};
-				this.socket.send(JSON.stringify(message));
+				this.sendMessage("end")
 			} else {
 				// create form dinamically and submit
 				// reason: make redirect from Go work automatically
