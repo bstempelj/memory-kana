@@ -25,13 +25,16 @@ class MemoryKana {
 		this.maxScore = 12;
 		this.gameOver = false;
 
-		if (this.useWebSocket) {
-			this.initWebSocket();
-		}
 		this.initGame(kana);
 	}
 
 	initGame(kana) {
+		if (this.useWebSocket) {
+			this.initWebSocket();
+			console.log(kana);
+			this.sendMessage("init", { kana });
+		}
+
 		this.createTiles();
 
 		switch (kana) {

@@ -79,17 +79,25 @@ var upgrader = websocket.Upgrader{
 }
 
 type Game struct {
-	pairs     []Pair
 	startTime int64
 	endTime   int64
 	duration  time.Duration
 }
 
-type Timestamp struct {
+
+type GameInitData struct {
+	Kana string `json:"kana"`
+}
+
+type GameStartData struct {
 	Timestamp int64 `json:"timestamp"`
 }
 
-type Pair struct {
+type GameEndData struct {
+	Timestamp int64 `json:"timestamp"`
+}
+
+type GamePairData struct {
 	Kana      string `json:"kana"`
 	Romaji    string `json:"romaji"`
 	Timestamp int64  `json:"timestamp"`
@@ -121,11 +129,6 @@ func (ws *WebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	slog.Debug("websocket connection upgraded")
-
-	kana := hiragana[:]
-	slog.Debug("original", "kana", kana)
-	fisherYatesShuffle(kana)
-	slog.Debug("shuffled", "kana", kana)
 
 	defer func() {
 		if err := conn.Close(); err != nil {
@@ -196,38 +199,56 @@ func (ws *WebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func handleGameMessage(game *Game, msg GameMessage) error {
 	switch msg.Type {
-	case "start":
-		var startTimestamp Timestamp
-		if err := json.Unmarshal(msg.Data, &startTimestamp); err != nil {
+	case "init":
+		var data GameInitData
+		if err := json.Unmarshal(msg.Data, &data); err != nil {
 			return err
 		}
 
-		game.startTime = startTimestamp.Timestamp
+		var kana []string
+		switch data.Kana {
+		case "hiragana":
+			kana = hiragana[:]
+		case "katakana":
+			kana = katakana[:]
+		}
+		slog.Debug("original", "kana", kana)
+		fisherYatesShuffle(kana)
+		slog.Debug("shuffled", "kana", kana)
+
+		slog.Debug("game init", "kana", data.Kana, "tiles", kana)
+
+	case "start":
+		var data GameStartData
+		if err := json.Unmarshal(msg.Data, &data); err != nil {
+			return err
+		}
+
+		game.startTime = data.Timestamp
 		slog.Debug("game start", "time", game.startTime)
 
 	case "end":
-		var endTimestamp Timestamp
-		if err := json.Unmarshal(msg.Data, &endTimestamp); err != nil {
+		var data GameEndData
+		if err := json.Unmarshal(msg.Data, &data); err != nil {
 			return err
 		}
 
-		game.endTime = endTimestamp.Timestamp
+		game.endTime = data.Timestamp
 		slog.Debug("game over", "time", game.endTime)
 
 		return ErrGameOver
 
 	case "pair":
-		var pair Pair
-		if err := json.Unmarshal(msg.Data, &pair); err != nil {
+		var data GamePairData
+		if err := json.Unmarshal(msg.Data, &data); err != nil {
 			return err
 		}
-		game.pairs = append(game.pairs, pair)
 
 		slog.Debug(
 			"received pair message",
-			"kana", string(pair.Kana),
-			"romaji", string(pair.Romaji),
-			"timestamp", pair.Timestamp)
+			"kana", string(data.Kana),
+			"romaji", string(data.Romaji),
+			"timestamp", data.Timestamp)
 	}
 	return nil
 }
