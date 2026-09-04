@@ -28,10 +28,23 @@ class MemoryKana {
 		this.initGame(kana);
 	}
 
-	initGame(kana) {
+	async initGame(kana) {
 		if (this.useWebSocket) {
-			this.initWebSocket();
-			console.log(kana);
+			this.socket = await this.initWebSocket();
+
+			this.socket.onmessage = (event) => {
+				console.log("websocket message:", event);
+
+				const message = JSON.parse(event.data);
+				// TODO: check if message contains redirect as data
+				window.location.href = message.data.redirect;
+			};
+
+			this.socket.onclose = (event) => {
+				console.log("websocket closed:", event);
+				// TODO: show error if closed before gameover message received
+			};
+
 			this.sendMessage("init", { kana });
 		}
 
@@ -49,30 +62,13 @@ class MemoryKana {
 	}
 
 	initWebSocket() {
-		const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-		this.socket = new WebSocket(`${proto}//${location.host}/game/ws`);
+		return new Promise((resolve, reject) => {
+			const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+			const socket = new WebSocket(`${proto}//${location.host}/game/ws`);
+			socket.addEventListener('open', () => resolve(socket));
+			socket.addEventListener('error', (event) => reject(event));
+		});
 
-
-		this.socket.onopen = () => {
-			console.log("websocket connected");
-		};
-
-		this.socket.onclose = (event) => {
-			console.log("websocket closed:", event);
-			// TODO: show error if closed before gameover message received
-		};
-
-		this.socket.onerror = (error) => {
-			console.error("websocket error:", error);
-		};
-
-		this.socket.onmessage = (event) => {
-			console.log("websocket message:", event);
-
-			const message = JSON.parse(event.data);
-			// TODO: check if message contains redirect as data
-			window.location.href = message.data.redirect;
-		};
 	}
 
 	startTimer() {
