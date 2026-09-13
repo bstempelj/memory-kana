@@ -45,7 +45,7 @@ func GetMenu(templateFS embed.FS, db *sql.DB) http.HandlerFunc {
 	}
 }
 
-func GetGame(templateFS embed.FS, db *sql.DB, useWebSocket *bool) http.HandlerFunc {
+func GetGame(templateFS embed.FS, db *sql.DB, useWebSocket bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		t := template.Must(template.ParseFS(
 			templateFS,
@@ -64,7 +64,7 @@ func GetGame(templateFS embed.FS, db *sql.DB, useWebSocket *bool) http.HandlerFu
 			Scripts:      true,
 			Kana:         kana,
 			CSRFToken:    csrf.Token(r),
-			UseWebSocket: *useWebSocket,
+			UseWebSocket: useWebSocket,
 		}
 
 		if err := t.Execute(w, page); err != nil {

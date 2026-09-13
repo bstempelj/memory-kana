@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"strconv"
 
 	"github.com/gorilla/csrf"
 
@@ -23,7 +24,6 @@ var templates embed.FS
 
 func main() {
 	migrateOnly := flag.Bool("migrate-only", false, "run only migrations without starting the server")
-	useWebSocket := flag.Bool("use-websocket", false, "switch to using websocket")
 	flag.Parse()
 
 	var level slog.Level
@@ -34,6 +34,17 @@ func main() {
 		}
 	}
 	slog.SetLogLoggerLevel(level)
+
+	var useWebSocket bool
+	if strVal, ok := os.LookupEnv("USE_WEBSOCKET"); ok {
+		boolVal, err := strconv.ParseBool(strVal)
+		if err != nil {
+			slog.Error("invalid env value", "env", "USE_WEBSOCKET", "err", err)
+			os.Exit(1)
+		}
+		useWebSocket = boolVal
+	}
+	slog.Info("protocol selection", "websocket", useWebSocket, "http", !useWebSocket)
 
 	db, err := storage.Connect()
 	if err != nil {
@@ -54,7 +65,7 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", handlers.GetMenu(templates, db))
 	mux.HandleFunc("GET /game", handlers.GetGame(templates, db, useWebSocket))
-	if *useWebSocket {
+	if useWebSocket {
 		mux.Handle("GET /game/ws", handlers.NewWebSocketHandler(db))
 	} else {
 		mux.HandleFunc("POST /scoreboard", handlers.PostScoreboard(db))
