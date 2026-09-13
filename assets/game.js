@@ -17,7 +17,7 @@ class MemoryKana {
 
 		// timer
 		this.timer = document.querySelector(".mk-timer");
-		this.timerStarted;
+		this.timerStarted = false;
 		this.timerHandle;
 
 		// score
@@ -29,46 +29,73 @@ class MemoryKana {
 	}
 
 	async initGame(kana) {
-		if (this.useWebSocket) {
-			this.socket = await this.initWebSocket();
-
-			this.socket.onmessage = (event) => {
-				console.log("websocket message:", event);
-
-				const message = JSON.parse(event.data);
-				// TODO: check if message contains redirect as data
-				window.location.href = message.data.redirect;
-			};
-
-			this.socket.onclose = (event) => {
-				console.log("websocket closed:", event);
-				// TODO: show error if closed before gameover message received
-			};
-
-			this.sendMessage("init", { kana });
-		}
-
-		this.createTiles();
-
 		switch (kana) {
 		case "hiragana": this.kana = this.hiragana; break;
 		case "katakana": this.kana = this.katakana; break;
 		default: throw new Error("invalid kana");
 		}
 
-		this.populateTiles(this.kana);
-		this.timerStarted = false;
-		this.tiles.forEach(tile => (new Tile(tile)).enableClick(this.handleTileClick.bind(this)));
+		if (this.useWebSocket) {
+			const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+			this.socket = new WebSocket(`${proto}//${location.host}/game/ws`);
+			this.socket.addEventListener('open', this.handleWebSocketOpen.bind(this));
+			this.socket.addEventListener('close', this.handleWebSocketClose.bind(this));
+			this.socket.addEventListener('message', this.handleWebSocketMessage.bind(this));
+			this.socket.addEventListener('error', this.handleWebSocketError.bind(this));
+		} else {
+			this.createTiles();
+			this.populateTiles(this.kana);
+			this.tiles.forEach(tile => (new Tile(tile)).enableClick(this.handleTileClick.bind(this)));
+		}
 	}
 
-	initWebSocket() {
-		return new Promise((resolve, reject) => {
-			const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-			const socket = new WebSocket(`${proto}//${location.host}/game/ws`);
-			socket.addEventListener('open', () => resolve(socket));
-			socket.addEventListener('error', (event) => reject(event));
-		});
+	handleWebSocketOpen(event) {
+		console.log('websocket open:', event);
+		// TODO: also support katakana
+		this.sendMessage("init", { kana: "hiragana" });
+	}
 
+	handleWebSocketClose(event) {
+		console.log("websocket closed:", event);
+		if (this.socket) {
+			this.socket.close();
+			this.socket = null;
+		}
+		// TODO: show error if closed before gameover message received
+	}
+
+	handleWebSocketMessage(event) {
+		console.log("websocket message:", event);
+		const message = JSON.parse(event.data);
+
+		switch (message.type) {
+		case "init":
+			console.log(message.data);
+			this.createTiles();
+			// TODO: shuffle and populate tiles
+			this.tiles.forEach(tile => (new Tile(tile)).enableClick(this.handleTileClick.bind(this)));
+			break;
+
+		case "start":
+			// TODO: sent msg to client
+			break;
+
+		case "end":
+			// TODO: check if message contains redirect as data
+			window.location.href = message.data.redirect;
+			break;
+
+		case "pair":
+			// TODO: sent msg to client
+			break;
+
+		default: throw new Error("invalid message type");
+		}
+
+	}
+
+	handleWebSocketError(event) {
+		console.error('websocket error:', event);
 	}
 
 	startTimer() {
@@ -95,6 +122,9 @@ class MemoryKana {
 	}
 
 	sendMessage(type, data) {
+		if (this.socket.readyState !== WebSocket.OPEN) {
+			throw new Error("websocket is not open yet!");
+		}
 		const message = {
 			type: type,
 			data: {

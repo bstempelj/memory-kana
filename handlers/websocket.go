@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"math/rand/v2"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/bstempelj/memory-kana/storage"
@@ -160,7 +161,7 @@ func (ws *WebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			"type", string(msg.Type),
 			"data", string(msg.Data))
 
-		if err := handleGameMessage(&game, msg); err != nil {
+		if err := handleGameMessage(conn, &game, msg); err != nil {
 			if errors.Is(err, ErrGameOver) {
 				break
 			}
@@ -197,7 +198,7 @@ func (ws *WebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func handleGameMessage(game *Game, msg GameMessage) error {
+func handleGameMessage(conn *websocket.Conn, game *Game, msg GameMessage) error {
 	switch msg.Type {
 	case "init":
 		var data GameInitData
@@ -217,6 +218,17 @@ func handleGameMessage(game *Game, msg GameMessage) error {
 		slog.Debug("shuffled", "kana", kana)
 
 		slog.Debug("game init", "kana", data.Kana, "tiles", kana)
+
+		clientMsg := map[string]any{
+			"type": "init",
+			"data": map[string]string{
+				"kana": strings.Join(kana, ", "),
+			},
+		}
+
+		if err := conn.WriteJSON(clientMsg); err != nil {
+			slog.Error("sending init message to client", "err", err)
+		}
 
 	case "start":
 		var data GameStartData
