@@ -2,6 +2,7 @@ package main
 
 import (
 	"embed"
+	"errors"
 	"flag"
 	"fmt"
 	"log/slog"
@@ -22,6 +23,19 @@ var assets embed.FS
 //go:embed templates
 var templates embed.FS
 
+func lookupAndParseBoolEnv(env string) (bool, error) {
+	strVal, ok := os.LookupEnv(env)
+	if !ok {
+		return false, errors.New(fmt.Sprintf("env %s not set", env))
+	}
+
+	boolVal, err := strconv.ParseBool(strVal)
+	if err != nil {
+		return false, errors.New("env value is not of type bool")
+	}
+	return boolVal, nil
+}
+
 func main() {
 	migrateOnly := flag.Bool("migrate-only", false, "run only migrations without starting the server")
 	flag.Parse()
@@ -35,14 +49,10 @@ func main() {
 	}
 	slog.SetLogLoggerLevel(level)
 
-	var useWebSocket bool
-	if strVal, ok := os.LookupEnv("USE_WEBSOCKET"); ok {
-		boolVal, err := strconv.ParseBool(strVal)
-		if err != nil {
-			slog.Error("invalid env value", "env", "USE_WEBSOCKET", "err", err)
-			os.Exit(1)
-		}
-		useWebSocket = boolVal
+	useWebSocket, err := lookupAndParseBoolEnv("USE_WEBSOCKET")
+	if err != nil {
+		slog.Error("error with env", "env", "USE_WEBSOCKET", "err", err)
+		os.Exit(1)
 	}
 	slog.Info("protocol selection", "websocket", useWebSocket, "http", !useWebSocket)
 
