@@ -45,7 +45,9 @@ class MemoryKana {
 		} else {
 			this.createTiles();
 			this.populateTiles(this.kana);
-			this.tiles.forEach(tile => tile.enableClick(this.handleTileClick.bind(this)));
+			for (let i = 0; i < this.tiles.length; i++) {
+				this.tiles[i].enableClick(this.handleTileClick.bind(this));
+			}
 		}
 	}
 
@@ -246,27 +248,27 @@ class MemoryKana {
 		let temp = this.tiles.slice();
 		while (temp.length > 0) {
 			// random remove from array
-			let kana = temp.splice(this.randomNumber(0, temp.length), 1)[0].children[0];
-			let romaji = temp.splice(this.randomNumber(0, temp.length), 1)[0].children[0];
+			let kana = temp.splice(this.randomNumber(0, temp.length), 1);
+			let romaji = temp.splice(this.randomNumber(0, temp.length), 1);
 			// loop if duplicate is found
 			let prop = this.randomProperty(kanaType);
 			while (this.checkDuplicate(prop)) {
 				prop = this.randomProperty(kanaType);
 			}
 
-			kana.setAttribute("data-pair", kanaType[prop]);
-			kana.setAttribute("data-type", "kana");
-			kana.innerHTML = prop;
+			kana.pair = kanaType[prop];
+			kana.type = "kana";
+			kana.text = prop;
 
-			romaji.setAttribute("data-pair", prop);
-			romaji.setAttribute("data-type", "romaji");
-			romaji.innerHTML = kanaType[prop];
+			romaji.pair = prop;
+			romaji.type = "romaji";
+			romaji.text = kanaType[prop];
 		}
 	}
 
 	checkDuplicate(test) {
 		for (let i = 0, len = this.tiles.length; i < len; i++) {
-			let span = this.tiles[i].children[0];
+			let span = this.tiles[i].element.children[0];
 			if (span.innerHTML == test) return true;
 		}
 		return false;
