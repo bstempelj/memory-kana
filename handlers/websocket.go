@@ -91,7 +91,7 @@ type Game struct {
 }
 
 type GameInitData struct {
-	Kana string `json:"kana"`
+	Kana  string `json:"kana"`
 	Tiles []Tile `json:"tiles"`
 }
 
@@ -245,7 +245,7 @@ func handleGameMessage(conn *websocket.Conn, game *Game, msg GameMessage) error 
 		clientMsg := map[string]any{
 			"type": "init",
 			"data": GameInitData{
-				Kana: data.Kana,
+				Kana:  data.Kana,
 				Tiles: tiles,
 			},
 		}
