@@ -192,7 +192,7 @@ func (ws *WebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	clientMsg := map[string]any{
-		"type": "gameover",
+		"type": "end",
 		"data": map[string]string{
 			"redirect": "/scoreboard?p=" + playerName,
 		},

@@ -45,7 +45,7 @@ class MemoryKana {
 		} else {
 			this.createTiles();
 			this.populateTiles(this.kana);
-			this.tiles.forEach(tile => (new Tile(tile)).enableClick(this.handleTileClick.bind(this)));
+			this.tiles.forEach(tile => tile.enableClick(this.handleTileClick.bind(this)));
 		}
 	}
 
@@ -70,10 +70,14 @@ class MemoryKana {
 
 		switch (message.type) {
 		case "init":
-			console.log(message.data);
 			this.createTiles();
-			// TODO: shuffle and populate tiles
-			this.tiles.forEach(tile => (new Tile(tile)).enableClick(this.handleTileClick.bind(this)));
+			for (let i = 0; i < this.tiles.length; i++) {
+				const dataTile = message.data.tiles[i];
+				this.tiles[i].text = dataTile.text;
+				this.tiles[i].type = dataTile.type;
+				this.tiles[i].pair = dataTile.pair;
+				this.tiles[i].enableClick(this.handleTileClick.bind(this))
+			}
 			break;
 
 		case "start":
@@ -234,7 +238,8 @@ class MemoryKana {
 			let span = document.createElement("span");
 			this.grid.appendChild(li).appendChild(span);
 		}
-		this.tiles = Array.prototype.slice.call(this.grid.querySelectorAll("li"))
+		const lis = this.grid.querySelectorAll("li")
+		this.tiles = [...lis].map(li => new Tile(li))
 	}
 
 	populateTiles(kanaType) {
@@ -308,9 +313,30 @@ class MemoryKana {
 class Tile {
 	constructor(element) {
 		this.element = element;
-		this.text = this.element.children[0].innerHTML;
-		this.pair = this.element.children[0].dataset.pair;
-		this.type = this.element.children[0].dataset.type;
+	}
+
+	get text() {
+		return this.element.children[0].innerHTML;
+	}
+
+	set text(value) {
+		this.element.children[0].innerHTML = value;
+	}
+
+	get pair() {
+		return this.element.children[0].dataset.pair;
+	}
+
+	set pair(value) {
+		this.element.children[0].dataset.pair = value;
+	}
+
+	get type() {
+		return this.element.children[0].dataset.type;
+	}
+
+	set type(value) {
+		this.element.children[0].dataset.type = value;
 	}
 
 	enableClick(handler) {
