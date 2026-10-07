@@ -5,12 +5,69 @@ import (
 	"encoding/json"
 	"errors"
 	"log/slog"
+	"math/rand/v2"
 	"net/http"
 	"time"
 
 	"github.com/bstempelj/memory-kana/storage"
 	"github.com/gorilla/websocket"
 )
+
+var hiraganaToRomaji = map[string]string{
+	"あ": "a", "い": "i", "う": "u", "え": "e", "お": "o",
+	"か": "ka", "き": "ki", "く": "ku", "け": "ke", "こ": "ko",
+	"さ": "sa", "し": "shi", "す": "su", "せ": "se", "そ": "so",
+	"た": "ta", "ち": "chi", "つ": "tsu", "て": "te", "と": "to",
+	"な": "na", "に": "ni", "ぬ": "nu", "ね": "ne", "の": "no",
+	"は": "ha", "ひ": "hi", "ふ": "fu", "へ": "he", "ほ": "ho",
+	"ま": "ma", "み": "mi", "む": "mu", "め": "me", "も": "mo",
+	"や": "ya", "ゆ": "yu", "よ": "yo",
+	"ら": "ra", "り": "ri", "る": "ru", "れ": "re", "ろ": "ro",
+	"わ": "wa", "を": "wo",
+	"ん": "n",
+}
+
+var katakanaToRomaji = map[string]string{
+	"ア": "a", "イ": "i", "ウ": "u", "エ": "e", "オ": "o",
+	"カ": "ka", "キ": "ki", "ク": "ku", "ケ": "ke", "コ": "ko",
+	"サ": "sa", "シ": "shi", "ス": "su", "セ": "se", "ソ": "so",
+	"タ": "ta", "チ": "chi", "ツ": "tsu", "テ": "te", "ト": "to",
+	"ナ": "na", "ニ": "ni", "ヌ": "nu", "ネ": "ne", "ノ": "no",
+	"ハ": "ha", "ヒ": "hi", "フ": "fu", "ヘ": "he", "ホ": "ho",
+	"マ": "ma", "ミ": "mi", "ム": "mu", "メ": "me", "モ": "mo",
+	"ヤ": "ya", "ユ": "yu", "ヨ": "yo",
+	"ラ": "ra", "リ": "ri", "ル": "ru", "レ": "re", "ロ": "ro",
+	"ワ": "wa", "ヲ": "wo",
+	"ン": "n",
+}
+
+var hiragana = [46]string{
+	"あ", "い", "う", "え", "お",
+	"か", "き", "く", "け", "こ",
+	"さ", "し", "す", "せ", "そ",
+	"た", "ち", "つ", "て", "と",
+	"な", "に", "ぬ", "ね", "の",
+	"は", "ひ", "ふ", "へ", "ほ",
+	"ま", "み", "む", "め", "も",
+	"や", "ゆ", "よ",
+	"ら", "り", "る", "れ", "ろ",
+	"わ", "を",
+	"ん",
+}
+
+var katakana = [46]string{
+	"ア", "イ", "ウ", "エ", "オ",
+	"カ", "キ", "ク", "ケ", "コ",
+	"サ", "シ", "ス", "セ", "ソ",
+	"タ", "チ", "ツ", "テ", "ト",
+	"ナ", "ニ", "ヌ", "ネ", "ノ",
+	"ハ", "ヒ", "フ", "ヘ", "ホ",
+	"マ", "ミ", "ム", "メ", "モ",
+	"ヤ", "ユ", "ヨ",
+	"ラ", "リ", "ル", "レ", "ロ",
+	"ワ", "ヲ",
+	"ン",
+}
 
 var ErrGameOver = errors.New("game over")
 
@@ -21,18 +78,32 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
+type Tile struct {
+	Text string `json:"text"`
+	Type string `json:"type"`
+	Pair string `json:"pair"`
+}
+
 type Game struct {
-	pairs     []Pair
 	startTime int64
 	endTime   int64
 	duration  time.Duration
 }
 
-type Timestamp struct {
+type GameInitData struct {
+	Kana  string `json:"kana"`
+	Tiles []Tile `json:"tiles"`
+}
+
+type GameStartData struct {
 	Timestamp int64 `json:"timestamp"`
 }
 
-type Pair struct {
+type GameEndData struct {
+	Timestamp int64 `json:"timestamp"`
+}
+
+type GamePairData struct {
 	Kana      string `json:"kana"`
 	Romaji    string `json:"romaji"`
 	Timestamp int64  `json:"timestamp"`
@@ -95,7 +166,7 @@ func (ws *WebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			"type", string(msg.Type),
 			"data", string(msg.Data))
 
-		if err := handleGameMessage(&game, msg); err != nil {
+		if err := handleGameMessage(conn, &game, msg); err != nil {
 			if errors.Is(err, ErrGameOver) {
 				break
 			}
@@ -121,7 +192,7 @@ func (ws *WebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	clientMsg := map[string]any{
-		"type": "gameover",
+		"type": "end",
 		"data": map[string]string{
 			"redirect": "/scoreboard?p=" + playerName,
 		},
@@ -132,40 +203,100 @@ func (ws *WebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func handleGameMessage(game *Game, msg GameMessage) error {
+func handleGameMessage(conn *websocket.Conn, game *Game, msg GameMessage) error {
 	switch msg.Type {
-	case "start":
-		var startTimestamp Timestamp
-		if err := json.Unmarshal(msg.Data, &startTimestamp); err != nil {
+	case "init":
+		var data GameInitData
+		if err := json.Unmarshal(msg.Data, &data); err != nil {
 			return err
 		}
 
-		game.startTime = startTimestamp.Timestamp
+		var kana []string
+		var kanaToRomaji map[string]string
+
+		switch data.Kana {
+		case "hiragana":
+			kana = hiragana[:]
+			kanaToRomaji = hiraganaToRomaji
+		case "katakana":
+			kana = katakana[:]
+			kanaToRomaji = katakanaToRomaji
+		}
+
+		slog.Debug("original", "kana", kana)
+		fisherYatesShuffle(kana)
+		slog.Debug("shuffled", "kana", kana)
+
+		tiles := make([]Tile, 24)
+		for i := 0; i < 12; i++ {
+			kanaTile := kana[i]
+			romajiTile := kanaToRomaji[kana[i]]
+			tiles[i] = Tile{
+				Text: kanaTile,
+				Type: "kana",
+				Pair: romajiTile,
+			}
+			tiles[i+12] = Tile{
+				Text: romajiTile,
+				Type: "romaji",
+				Pair: kanaTile,
+			}
+		}
+
+		fisherYatesShuffle(tiles)
+
+		slog.Debug("game init", "kana", data.Kana, "tiles", tiles)
+
+		clientMsg := map[string]any{
+			"type": "init",
+			"data": GameInitData{
+				Kana:  data.Kana,
+				Tiles: tiles,
+			},
+		}
+
+		if err := conn.WriteJSON(clientMsg); err != nil {
+			slog.Error("sending init message to client", "err", err)
+		}
+
+	case "start":
+		var data GameStartData
+		if err := json.Unmarshal(msg.Data, &data); err != nil {
+			return err
+		}
+
+		game.startTime = data.Timestamp
 		slog.Debug("game start", "time", game.startTime)
 
 	case "end":
-		var endTimestamp Timestamp
-		if err := json.Unmarshal(msg.Data, &endTimestamp); err != nil {
+		var data GameEndData
+		if err := json.Unmarshal(msg.Data, &data); err != nil {
 			return err
 		}
 
-		game.endTime = endTimestamp.Timestamp
+		game.endTime = data.Timestamp
 		slog.Debug("game over", "time", game.endTime)
 
 		return ErrGameOver
 
 	case "pair":
-		var pair Pair
-		if err := json.Unmarshal(msg.Data, &pair); err != nil {
+		var data GamePairData
+		if err := json.Unmarshal(msg.Data, &data); err != nil {
 			return err
 		}
-		game.pairs = append(game.pairs, pair)
 
 		slog.Debug(
 			"received pair message",
-			"kana", string(pair.Kana),
-			"romaji", string(pair.Romaji),
-			"timestamp", pair.Timestamp)
+			"kana", string(data.Kana),
+			"romaji", string(data.Romaji),
+			"timestamp", data.Timestamp)
 	}
 	return nil
+}
+
+func fisherYatesShuffle[T any](kana []T) {
+	for i := len(kana) - 1; i >= 1; i-- {
+		j := rand.IntN(i + 1)
+		kana[i], kana[j] = kana[j], kana[i]
+	}
 }

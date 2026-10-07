@@ -26,7 +26,7 @@ var templates embed.FS
 func lookupAndParseBoolEnv(env string) (bool, error) {
 	strVal, ok := os.LookupEnv(env)
 	if !ok {
-		return false, errors.New(fmt.Sprintf("env %s not set", env))
+		return false, fmt.Errorf("env %s not set", env)
 	}
 
 	boolVal, err := strconv.ParseBool(strVal)

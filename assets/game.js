@@ -6,7 +6,8 @@ class MemoryKana {
 
 		// grid and content
 		this.grid = document.querySelector(".mk-grid");
-		this.tiles;
+		this.tiles = null;
+		this.numTiles = 24; // must be divisible by 2
 
 		// previously clicked tile
 		this.clicked = null;
@@ -17,7 +18,7 @@ class MemoryKana {
 
 		// timer
 		this.timer = document.querySelector(".mk-timer");
-		this.timerStarted;
+		this.timerStarted = false;
 		this.timerHandle;
 
 		// score
@@ -25,51 +26,83 @@ class MemoryKana {
 		this.maxScore = 12;
 		this.gameOver = false;
 
-		if (this.useWebSocket) {
-			this.initWebSocket();
-		}
 		this.initGame(kana);
 	}
 
-	initGame(kana) {
-		this.createTiles();
-
+	async initGame(kana) {
 		switch (kana) {
 		case "hiragana": this.kana = this.hiragana; break;
 		case "katakana": this.kana = this.katakana; break;
 		default: throw new Error("invalid kana");
 		}
 
-		this.populateTiles(this.kana);
-		this.timerStarted = false;
-		this.tiles.forEach(tile => (new Tile(tile)).enableClick(this.handleTileClick.bind(this)));
+		if (this.useWebSocket) {
+			const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+			this.socket = new WebSocket(`${proto}//${location.host}/game/ws`);
+			this.socket.addEventListener('open', this.handleWebSocketOpen.bind(this));
+			this.socket.addEventListener('close', this.handleWebSocketClose.bind(this));
+			this.socket.addEventListener('message', this.handleWebSocketMessage.bind(this));
+			this.socket.addEventListener('error', this.handleWebSocketError.bind(this));
+		} else {
+			this.createTiles();
+			this.populateTiles();
+			for (let i = 0; i < this.tiles.length; i++) {
+				this.tiles[i].enableClick(this.handleTileClick.bind(this));
+			}
+		}
 	}
 
-	initWebSocket() {
-		const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-		this.socket = new WebSocket(`${proto}//${location.host}/game/ws`);
+	handleWebSocketOpen(event) {
+		console.log('websocket open:', event);
+		// TODO: also support katakana
+		this.sendMessage("init", { kana: "hiragana" });
+	}
 
+	handleWebSocketClose(event) {
+		console.log("websocket closed:", event);
+		if (this.socket) {
+			this.socket.close();
+			this.socket = null;
+		}
+		// TODO: show error if closed before gameover message received
+	}
 
-		this.socket.onopen = () => {
-			console.log("websocket connected");
-		};
+	handleWebSocketMessage(event) {
+		console.log("websocket message:", event);
+		const message = JSON.parse(event.data);
 
-		this.socket.onclose = (event) => {
-			console.log("websocket closed:", event);
-			// TODO: show error if closed before gameover message received
-		};
+		switch (message.type) {
+		case "init":
+			this.createTiles();
+			for (let i = 0; i < this.tiles.length; i++) {
+				const dataTile = message.data.tiles[i];
+				this.tiles[i].text = dataTile.text;
+				this.tiles[i].type = dataTile.type;
+				this.tiles[i].pair = dataTile.pair;
+				this.tiles[i].enableClick(this.handleTileClick.bind(this))
+			}
+			break;
 
-		this.socket.onerror = (error) => {
-			console.error("websocket error:", error);
-		};
+		case "start":
+			// TODO: sent msg to client
+			break;
 
-		this.socket.onmessage = (event) => {
-			console.log("websocket message:", event);
-
-			const message = JSON.parse(event.data);
+		case "end":
 			// TODO: check if message contains redirect as data
 			window.location.href = message.data.redirect;
-		};
+			break;
+
+		case "pair":
+			// TODO: sent msg to client
+			break;
+
+		default: throw new Error("invalid message type");
+		}
+
+	}
+
+	handleWebSocketError(event) {
+		console.error('websocket error:', event);
 	}
 
 	startTimer() {
@@ -95,17 +128,25 @@ class MemoryKana {
 		}, 1000);
 	}
 
+	sendMessage(type, data) {
+		if (this.socket.readyState !== WebSocket.OPEN) {
+			throw new Error("websocket is not open yet!");
+		}
+		const message = {
+			type: type,
+			data: {
+				...data,
+				timestamp: Math.floor(Date.now() / 1000),
+			},
+		};
+		this.socket.send(JSON.stringify(message));
+	}
+
 	handleTileClick(tile) {
 		// init timer on first click
 		if (!this.timerStarted) {
 			if (this.useWebSocket) {
-				const message = {
-					type: "start",
-					data: {
-						timestamp: Math.floor(Date.now() / 1000),
-					},
-				};
-				this.socket.send(JSON.stringify(message));
+				this.sendMessage("start")
 			}
 			this.startTimer();
 		}
@@ -137,18 +178,7 @@ class MemoryKana {
 			}
 
 			if (this.useWebSocket) {
-				// send pair over websocket
-				const message = {
-					type: "pair",
-					data: {
-						// TODO: make sure the dataset matches kana and romaji
-						// on the backend!!
-						kana: kana,
-						romaji: romaji,
-						timestamp: Math.floor(Date.now() / 1000),
-					},
-				};
-				this.socket.send(JSON.stringify(message));
+				this.sendMessage("pair", { kana, romaji })
 			}
 
 			tile.addClass("show");
@@ -176,13 +206,7 @@ class MemoryKana {
 			console.log(`elapsed time: ${elapsedTime}`);
 
 			if (this.useWebSocket) {
-				const message = {
-					type: "end",
-					data: {
-						timestamp: Math.floor(Date.now() / 1000),
-					},
-				};
-				this.socket.send(JSON.stringify(message));
+				this.sendMessage("end")
 			} else {
 				// create form dinamically and submit
 				// reason: make redirect from Go work automatically
@@ -211,40 +235,63 @@ class MemoryKana {
 	}
 
 	createTiles() {
-		let numOfTiles = 24;
-		for (let i = 0; i < numOfTiles; i++) {
+		for (let i = 0; i < this.numTiles; i++) {
 			let li = document.createElement("li");
 			let span = document.createElement("span");
 			this.grid.appendChild(li).appendChild(span);
 		}
-		this.tiles = Array.prototype.slice.call(this.grid.querySelectorAll("li"))
+		const lis = this.grid.querySelectorAll("li")
+		this.tiles = [...lis].map(li => new Tile(li))
 	}
 
-	populateTiles(kanaType) {
-		let temp = this.tiles.slice();
-		while (temp.length > 0) {
-			// random remove from array
-			let kana = temp.splice(this.randomNumber(0, temp.length), 1)[0].children[0];
-			let romaji = temp.splice(this.randomNumber(0, temp.length), 1)[0].children[0];
-			// loop if duplicate is found
-			let prop = this.randomProperty(kanaType);
-			while (this.checkDuplicate(prop)) {
-				prop = this.randomProperty(kanaType);
-			}
+	// General idea:
+	// 1. shuffle all the kana
+	// 2. cut in half and fill the rest with romaji
+	// 3. shuffle again to get a mix of kana and romaji
+	// 4. assign to document nodes
+	//
+	// Shuffling the tiles at the end would break the link between
+	// JS object and document node.
+	populateTiles() {
+		let kanaKeys = Object.keys(this.kana);
+		kanaKeys = this.fisherYatesShuffle(kanaKeys);
 
-			kana.setAttribute("data-pair", kanaType[prop]);
-			kana.setAttribute("data-type", "kana");
-			kana.innerHTML = prop;
+		const kanaLen = this.numTiles / 2;
+		kanaKeys.length = kanaLen; // cut in half
 
-			romaji.setAttribute("data-pair", prop);
-			romaji.setAttribute("data-type", "romaji");
-			romaji.innerHTML = kanaType[prop];
+		const temp = Array.from({ length: this.numTiles }, () => ({}));
+		for (let i = 0; i < kanaLen; i++) {
+			const kanaTile = kanaKeys[i];
+			const romajiTile = this.kana[kanaTile];
+
+			temp[i].text = kanaTile;
+			temp[i].type = "kana";
+			temp[i].pair = romajiTile;
+
+			temp[i+kanaLen].text = romajiTile;
+			temp[i+kanaLen].type = "romaji";
+			temp[i+kanaLen].pair = kanaTile;
 		}
+
+		const shuffled = this.fisherYatesShuffle(temp);
+		for (let i = 0; i < this.numTiles; i++) {
+			this.tiles[i].text = shuffled[i].text;
+			this.tiles[i].type = shuffled[i].type;
+			this.tiles[i].pair = shuffled[i].pair;
+		}
+	}
+
+	fisherYatesShuffle(arr) {
+		for (let i = arr.length-1; i >= 1; i--) {
+			const j = this.randomNumber(0, i+1);
+			[arr[i], arr[j]] = [arr[j], arr[i]];
+		}
+		return arr;
 	}
 
 	checkDuplicate(test) {
 		for (let i = 0, len = this.tiles.length; i < len; i++) {
-			let span = this.tiles[i].children[0];
+			let span = this.tiles[i].element.children[0];
 			if (span.innerHTML == test) return true;
 		}
 		return false;
@@ -291,9 +338,30 @@ class MemoryKana {
 class Tile {
 	constructor(element) {
 		this.element = element;
-		this.text = this.element.children[0].innerHTML;
-		this.pair = this.element.children[0].dataset.pair;
-		this.type = this.element.children[0].dataset.type;
+	}
+
+	get text() {
+		return this.element.children[0].innerHTML;
+	}
+
+	set text(value) {
+		this.element.children[0].innerHTML = value;
+	}
+
+	get pair() {
+		return this.element.children[0].dataset.pair;
+	}
+
+	set pair(value) {
+		this.element.children[0].dataset.pair = value;
+	}
+
+	get type() {
+		return this.element.children[0].dataset.type;
+	}
+
+	set type(value) {
+		this.element.children[0].dataset.type = value;
 	}
 
 	enableClick(handler) {
