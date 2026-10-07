@@ -3,6 +3,9 @@ export COMPOSE_PROFILES=dev
 export HOST_ENV=dev
 export CSRF_AUTH_KEY=32-byte-long-auth-key
 
+export LOG_LEVEL=debug
+export USE_WEBSOCKET=false
+
 export PGDATABASE=memory-kana
 export PGPASSWORD=password
 export PGSSLMODE=disable
