@@ -6,7 +6,8 @@ class MemoryKana {
 
 		// grid and content
 		this.grid = document.querySelector(".mk-grid");
-		this.tiles;
+		this.tiles = null;
+		this.numTiles = 24; // must be divisible by 2
 
 		// previously clicked tile
 		this.clicked = null;
@@ -44,7 +45,7 @@ class MemoryKana {
 			this.socket.addEventListener('error', this.handleWebSocketError.bind(this));
 		} else {
 			this.createTiles();
-			this.populateTiles(this.kana);
+			this.populateTiles();
 			for (let i = 0; i < this.tiles.length; i++) {
 				this.tiles[i].enableClick(this.handleTileClick.bind(this));
 			}
@@ -234,8 +235,7 @@ class MemoryKana {
 	}
 
 	createTiles() {
-		let numOfTiles = 24;
-		for (let i = 0; i < numOfTiles; i++) {
+		for (let i = 0; i < this.numTiles; i++) {
 			let li = document.createElement("li");
 			let span = document.createElement("span");
 			this.grid.appendChild(li).appendChild(span);
@@ -244,26 +244,49 @@ class MemoryKana {
 		this.tiles = [...lis].map(li => new Tile(li))
 	}
 
-	populateTiles(kanaType) {
-		let temp = this.tiles.slice();
-		while (temp.length > 0) {
-			// random remove from array
-			let kana = temp.splice(this.randomNumber(0, temp.length), 1);
-			let romaji = temp.splice(this.randomNumber(0, temp.length), 1);
-			// loop if duplicate is found
-			let prop = this.randomProperty(kanaType);
-			while (this.checkDuplicate(prop)) {
-				prop = this.randomProperty(kanaType);
-			}
+	// General idea:
+	// 1. shuffle all the kana
+	// 2. cut in half and fill the rest with romaji
+	// 3. shuffle again to get a mix of kana and romaji
+	// 4. assign to document nodes
+	//
+	// Shuffling the tiles at the end would break the link between
+	// JS object and document node.
+	populateTiles() {
+		let kanaKeys = Object.keys(this.kana);
+		kanaKeys = this.fisherYatesShuffle(kanaKeys);
 
-			kana.pair = kanaType[prop];
-			kana.type = "kana";
-			kana.text = prop;
+		const kanaLen = this.numTiles / 2;
+		kanaKeys.length = kanaLen; // cut in half
 
-			romaji.pair = prop;
-			romaji.type = "romaji";
-			romaji.text = kanaType[prop];
+		const temp = Array.from({ length: this.numTiles }, () => ({}));
+		for (let i = 0; i < kanaLen; i++) {
+			const kanaTile = kanaKeys[i];
+			const romajiTile = this.kana[kanaTile];
+
+			temp[i].text = kanaTile;
+			temp[i].type = "kana";
+			temp[i].pair = romajiTile;
+
+			temp[i+kanaLen].text = romajiTile;
+			temp[i+kanaLen].type = "romaji";
+			temp[i+kanaLen].pair = kanaTile;
 		}
+
+		const shuffled = this.fisherYatesShuffle(temp);
+		for (let i = 0; i < this.numTiles; i++) {
+			this.tiles[i].text = shuffled[i].text;
+			this.tiles[i].type = shuffled[i].type;
+			this.tiles[i].pair = shuffled[i].pair;
+		}
+	}
+
+	fisherYatesShuffle(arr) {
+		for (let i = arr.length-1; i >= 1; i--) {
+			const j = this.randomNumber(0, i+1);
+			[arr[i], arr[j]] = [arr[j], arr[i]];
+		}
+		return arr;
 	}
 
 	checkDuplicate(test) {
