@@ -6,6 +6,10 @@ _default:
 fmt:
 	go fmt ./...
 
+# Run golangci-lint recursively
+lint:
+	golangci-lint run ./...
+
 # Run go test with verbose flag recursively
 test:
 	go test -v ./...
