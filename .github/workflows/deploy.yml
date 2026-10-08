@@ -1,0 +1,48 @@
+name: Deploy
+on: push
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: staging
+    env:
+      VPS_HOST: ${{ vars.VPS_HOST }}
+      VPS_USER: ${{ vars.VPS_USER }}
+      VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          sparse-checkout: |-
+            compose.yaml
+            .envrc.example
+
+      - name: Convert .envrc to .env
+        run: |-
+          sed 's/^export //' .envrc.example > .env
+
+      - name: Insert secrets into .env values
+        env:
+          CSRF_AUTH_KEY: ${{ secrets.CSRF_AUTH_KEY }}
+          PGPASSWORD: ${{ secrets.PGPASSWORD }} 
+        run: |-
+          sed -i "s/^CSRF_AUTH_KEY=.*/CSRF_AUTH_KEY=${CSRF_AUTH_KEY}/" .env
+          sed -i "s/^PGPASSWORD=.*/PGPASSWORD=${PGPASSWORD}/" .env
+
+      - name: Setup SSH agent
+        uses: webfactory/ssh-agent@v0.10.0
+        with:
+          ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
+
+      - name: Copy over compose.yaml and .env
+        run: scp -o StrictHostKeyChecking=no compose.yaml .env "${VPS_USER}@${VPS_HOST}:/opt/memorykana"
+
+      - name: Pull latest image
+        run: ssh -o StrictHostKeyChecking=no "${VPS_USER}@${VPS_HOST}" "cd /opt/memorykana && docker compose pull"
+
+      - name: Start latest image
+        run: ssh -o StrictHostKeyChecking=no "${VPS_USER}@${VPS_HOST}" "cd /opt/memorykana && docker compose up -d"
