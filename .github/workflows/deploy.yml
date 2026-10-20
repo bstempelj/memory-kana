@@ -1,10 +1,5 @@
 name: Deploy
-on:
-  workflow_dispatch:
-    inputs:
-      tag:
-        required: true
-        type: string
+on: workflow_dispatch
 
 defaults:
   run:
@@ -22,7 +17,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
         with:
-          ref: refs/tags/${{ inputs.tag }}
+          ref: ${{ github.ref }}
           sparse-checkout: |-
             compose.yaml
             .envrc.example
@@ -38,6 +33,11 @@ jobs:
         run: |-
           sed -i "s/^CSRF_AUTH_KEY=.*/CSRF_AUTH_KEY=${CSRF_AUTH_KEY}/" .env
           sed -i "s/^PGPASSWORD=.*/PGPASSWORD=${PGPASSWORD}/" .env
+
+      - name: Switch to production env values
+        run: |-
+          sed -i "s/^COMPOSE_PROFILES=.*/COMPOSE_PROFILES=prod/" .env
+          sed -i "s/^HOST_ENV=.*/HOST_ENV=prod/" .env
 
       - name: Setup SSH agent
         uses: webfactory/ssh-agent@v0.10.0
